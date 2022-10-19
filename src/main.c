@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
+#include <unistd.h>
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
@@ -64,8 +65,11 @@ static void status_handler(struct bt_mesh_onoff_cli *cli,
 static void button_handler_cb(uint32_t pressed, uint32_t changed)
 {
 	if (!bt_mesh_is_provisioned()) {
+		printk("Mesh is not provisioned, cancelling button handler callback");
 		return;
 	}
+
+	printk("Button pressed: %d, %d", pressed, changed);
 
 	for (int i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		if (!(pressed & changed & BIT(i))) {
