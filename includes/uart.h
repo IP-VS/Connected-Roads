@@ -27,11 +27,11 @@ void uart_init(const struct device* uart_dev) {
     if (usb_enable(NULL)) {
         return;
     }
-    //while (!dtr) {
-        //uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_DTR, &dtr);
+    while (!dtr) {
+        uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_DTR, &dtr);
         /* Give CPU resources to low priority threads. */
         k_sleep(K_MSEC(100));
-    //}
+    }
 	if (!device_is_ready(uart_dev)) {
 		printk("UART device not found!");
 		return;
@@ -46,7 +46,7 @@ void uart_init(const struct device* uart_dev) {
 void uart_write(const struct device* uart_dev, const char* buf) {
     int msg_len = strlen(buf);
     for (int i = 0; i < msg_len; i++) {
-        uart_poll_out(&uart_msgq, buf[i]);
+        uart_poll_out(uart_dev, buf[i]);
     }
 }
 
@@ -55,5 +55,5 @@ void uart_write(const struct device* uart_dev, const char* buf) {
  */
 void uart_read(const struct device* uart_dev, char *buf)
 {
-    uart_poll_in(uart_dev, &buf);
+    uart_poll_in(uart_dev, buf);
 }
