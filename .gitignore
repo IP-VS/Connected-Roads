@@ -1,1 +1,4 @@
 build/
+build_dk/
+build_dongle/
+.vscode/

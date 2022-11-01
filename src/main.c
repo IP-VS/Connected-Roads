@@ -12,6 +12,7 @@
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
 #include <unistd.h>
+#include "uart.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
@@ -238,21 +239,12 @@ static void bt_ready(int err) {
 void main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-	uint32_t dtr = 0;
-
-	if (usb_enable(NULL)) {
-		return;
-	}
-
-	/* Poll if the DTR flag was set */
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-		/* Give CPU resources to low priority threads. */
-		k_sleep(K_MSEC(100));
-	}
+	
+	/* uart */
+	uart_init(dev);
+	uart_write(dev, "uart init\r\n");
 
 	/* start */
-
 	int err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
