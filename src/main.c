@@ -242,7 +242,7 @@ void main(void)
 	
 	/* uart */
 	uart_init(dev);
-	uart_write(dev, "uart init\r\n");
+	uart_write_str(dev, "uart says hello!\r\n");
 
 	/* start */
 	int err = bt_enable(bt_ready);
