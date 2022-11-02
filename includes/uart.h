@@ -28,7 +28,7 @@
  *   in this case, you need to handle the case that the buffer ran out of 
  *   space before the specified byte was read.
  * 
- * - Reading until a specific number of bytes:
+ * - Reading a specific number of bytes:
  * 
  *   uart_read(dev, buffer, buffer_size);
  */
