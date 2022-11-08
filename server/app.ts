@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiter
 const rateLimiter = rateLimit({
-  windowMs: parseInt(process.env.WINDOW_SIZE_MS ?? "900000"),
+  windowMs: parseInt(process.env.WINDOW_SIZE_MS ?? "100"),
   max: parseInt(process.env.MAX_CONNECTIONS_PER_WINDOW ?? "10"),
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
