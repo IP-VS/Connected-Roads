@@ -5,13 +5,11 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
-#include "uart.h"
 #include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
@@ -152,21 +150,11 @@ const struct bt_mesh_comp *model_handler_init(void)
 }
 
 void main(void)
-{
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-	
+{	
 	/* uart */
-	//uart_init(dev);
-	//uart_write_str(dev, "uart says hello!\r\n");
-
-
+	uart_init(dev);
 
 	/* start */
-	int err = bt_enable(bt_ready);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
 	provision();
 
 	printk("Main reached end :)\n");
