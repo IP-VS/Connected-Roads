@@ -5,14 +5,12 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
-#include <unistd.h>
-#include "uart.h"
+#include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
@@ -139,64 +137,6 @@ static void attention_blink(struct k_work *work)
 	}
 }
 
-static void attention_on(struct bt_mesh_model *mod)
-{
-	attention = true;
-	k_work_reschedule(&attention_blink_work, K_NO_WAIT);
-}
-
-static void attention_off(struct bt_mesh_model *mod)
-{
-	/* Will stop rescheduling blink timer */
-	attention = false;
-}
-
-static const struct bt_mesh_health_srv_cb health_srv_cb = {
-	.attn_on = attention_on,
-	.attn_off = attention_off,
-};
-
-static struct bt_mesh_health_srv health_srv = {
-	.cb = &health_srv_cb,
-};
-
-BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
-
-static struct bt_mesh_elem elements[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(sw0))
-	BT_MESH_ELEM(1,
-		     BT_MESH_MODEL_LIST(
-			     BT_MESH_MODEL_CFG_SRV,
-			     BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
-			     BT_MESH_MODEL_ONOFF_CLI(&buttons[0].client)),
-		     BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw1))
-	BT_MESH_ELEM(2,
-		     BT_MESH_MODEL_LIST(
-			     BT_MESH_MODEL_ONOFF_CLI(&buttons[1].client)),
-		     BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw2))
-	BT_MESH_ELEM(3,
-		     BT_MESH_MODEL_LIST(
-			     BT_MESH_MODEL_ONOFF_CLI(&buttons[2].client)),
-		     BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw3))
-	BT_MESH_ELEM(4,
-		     BT_MESH_MODEL_LIST(
-			     BT_MESH_MODEL_ONOFF_CLI(&buttons[3].client)),
-		     BT_MESH_MODEL_NONE),
-#endif
-};
-
-static const struct bt_mesh_comp comp = {
-	.cid = CONFIG_BT_COMPANY_ID,
-	.elem = elements,
-	.elem_count = ARRAY_SIZE(elements),
-};
-
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	static struct button_handler button_handler = {
@@ -209,47 +149,13 @@ const struct bt_mesh_comp *model_handler_init(void)
 	return &comp;
 }
 
-
-static void bt_ready(int err) {
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-	printk("Bluetooth initialized!\n");
-
-	dk_leds_init();
-	dk_buttons_init(NULL);
-
-	err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init());
-	if (err) {
-		printk("Initializing mesh failed (err %d)\n", err);
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		settings_load();
-	}
-
-	/* This will be a no-op if settings_load() loaded provisioning info */
-	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
-
-	printk("Mesh initialized\n");
-}
-
 void main(void)
-{
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-	
+{	
 	/* uart */
 	uart_init(dev);
-	uart_write_str(dev, "uart says hello!\r\n");
 
 	/* start */
-	int err = bt_enable(bt_ready);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
+	provision();
 
 	printk("Main reached end :)\n");
 
