@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/printk.h>
+#include "printk.h"
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -26,6 +26,7 @@ K_SEM_DEFINE(sem_button_pressed, 0, 1);
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
+
 
 static void health_current_status(struct bt_mesh_health_cli *cli, uint16_t addr,
 				  uint8_t test_id, uint16_t cid, uint8_t *faults,
@@ -340,11 +341,11 @@ void provision(void)
 	printk("Initializing...\n");
 
 	/* Initialize the Bluetooth Subsystem */
-	// err = bt_enable(NULL);
-	// if (err) {
-	// 	printk("Bluetooth init failed (err %d)\n", err);
-	// 	return;
-	// }
+	err = bt_enable(NULL);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
 
 	printk("Bluetooth initialized\n");
 	bt_ready();
