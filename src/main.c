@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
+#include "bluetooth/mesh/main.h"
 #include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
@@ -70,39 +71,7 @@ static void button_handler_cb(uint32_t pressed, uint32_t changed)
 
 	printk("Button pressed: %d, %d", pressed, changed);
 
-	for (int i = 0; i < ARRAY_SIZE(buttons); ++i) {
-		if (!(pressed & changed & BIT(i))) {
-			continue;
-		}
-
-		struct bt_mesh_onoff_set set = {
-			.on_off = !buttons[i].status,
-		};
-		int err;
-
-		/* As we can't know how many nodes are in a group, it doesn't
-		 * make sense to send acknowledged messages to group addresses -
-		 * we won't be able to make use of the responses anyway.
-		 */
-		if (bt_mesh_model_pub_is_unicast(buttons[i].client.model)) {
-			err = bt_mesh_onoff_cli_set(&buttons[i].client, NULL,
-						    &set, NULL);
-		} else {
-			err = bt_mesh_onoff_cli_set_unack(&buttons[i].client,
-							  NULL, &set);
-			if (!err) {
-				/* There'll be no response status for the
-				 * unacked message. Set the state immediately.
-				 */
-				buttons[i].status = set.on_off;
-				dk_set_led(i, set.on_off);
-			}
-		}
-
-		if (err) {
-			printk("OnOff %d set failed: %d\n", i + 1, err);
-		}
-	}
+	
 }
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
@@ -154,8 +123,21 @@ void main(void)
 	/* uart */
 	uart_init(dev);
 
-	/* start */
-	provision();
+	int err;
+
+	printk("Press button 1 within 10 seconds to make this node a provisioner\n");
+	if (wait_for_button_press(10)) {
+		provision();
+		printk("Done provisioning\n");
+	} else {
+		err = bt_enable(NULL);
+		bt_ready();
+		if (err) {
+			printk("Bluetooth init failed (err %d)\n", err);
+			return;
+		}
+
+	}
 
 	printk("Main reached end :)\n");
 
