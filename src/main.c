@@ -4,144 +4,88 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/drivers/uart.h>
-#include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
-#include "bluetooth/mesh/main.h"
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh/main.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/zephyr.h>
+
 #include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
-	     "Console device is not ACM CDC UART device");
+    "Console device is not ACM CDC UART device");
 
-const struct bt_mesh_comp *model_handler_init(void);
-
-/* Light switch behavior */
-
-/** Context for a single light switch. */
-struct button {
-	/** Current light status of the corresponding server. */
-	bool status;
-	/** Generic OnOff client instance for this switch. */
-	struct bt_mesh_onoff_cli client;
+static const struct bt_mesh_comp node_comp = {
+    .cid = CONFIG_BT_COMPANY_ID,
+    .elem = elements,
+    .elem_count = ARRAY_SIZE(elements),
 };
 
-static void status_handler(struct bt_mesh_onoff_cli *cli,
-			   struct bt_mesh_msg_ctx *ctx,
-			   const struct bt_mesh_onoff_status *status);
-
-static struct button buttons[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(sw0))
-	{ .client = BT_MESH_ONOFF_CLI_INIT(&status_handler) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw1))
-	{ .client = BT_MESH_ONOFF_CLI_INIT(&status_handler) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw2))
-	{ .client = BT_MESH_ONOFF_CLI_INIT(&status_handler) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw3))
-	{ .client = BT_MESH_ONOFF_CLI_INIT(&status_handler) },
-#endif
+static const struct bt_mesh_prov node_prov = {
+    .uuid = dev_uuid,
 };
 
-static void status_handler(struct bt_mesh_onoff_cli *cli,
-			   struct bt_mesh_msg_ctx *ctx,
-			   const struct bt_mesh_onoff_status *status)
-{
-	struct button *button =
-		CONTAINER_OF(cli, struct button, client);
-	int index = button - &buttons[0];
+static int run_bt_node(void) {
+    uint8_t net_key[16], dev_key[16];
+    int err;
 
-	button->status = status->present_on_off;
-	dk_set_led(index, status->present_on_off);
+    err = bt_mesh_init(&node_prov, &node_comp);
+    if (err) {
+        printk("Initializing mesh failed (err %d)\n", err);
+        return;
+    }
 
-	printk("Button %d: Received response: %s\n", index + 1,
-	       status->present_on_off ? "on" : "off");
+    printk("Mesh initialized\n");
+
+    if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+        printk("Loading stored settings\n");
+        settings_load();
+    }
+
+    err = bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
+    if (err) {
+        printk("bt_mesh_prov_enable failed (err %d)\n", err);
+    } else {
+        printk("bt_mesh_prov_enable ok\n");
+    }
+
+    return 0;
 }
 
-static void button_handler_cb(uint32_t pressed, uint32_t changed)
-{
-	if (!bt_mesh_is_provisioned()) {
-		printk("Mesh is not provisioned, cancelling button handler callback");
-		return;
-	}
+void main(void) {
+    /* uart */
+    uart_init(dev);
 
-	printk("Button pressed: %d, %d", pressed, changed);
+    int err;
 
-	
-}
+    button_init();
 
-/* Set up a repeating delayed work to blink the DK's LEDs when attention is
- * requested.
- */
-static struct k_work_delayable attention_blink_work;
-static bool attention;
+    printk("Press button 1 within 5 seconds to make this node a provisioner\n");
+    if (wait_for_button_press(5)) {
+        provision();
+        printk("Done provisioning\n");
+    } else {
+        err = bt_enable(NULL);
+        if (err) {
+            printk("Bluetooth init failed (err %d)\n", err);
+            return;
+        }
+        run_bt_node();
+    }
 
-static void attention_blink(struct k_work *work)
-{
-	static int idx;
-	const uint8_t pattern[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(sw0))
-		BIT(0),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw1))
-		BIT(1),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw2))
-		BIT(2),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(sw3))
-		BIT(3),
-#endif
-	};
+    printk("Main reached end :)\n");
 
-	if (attention) {
-		dk_set_leds(pattern[idx++ % ARRAY_SIZE(pattern)]);
-		k_work_reschedule(&attention_blink_work, K_MSEC(30));
-	} else {
-		dk_set_leds(DK_NO_LEDS_MSK);
-	}
-}
-
-const struct bt_mesh_comp *model_handler_init(void)
-{
-	static struct button_handler button_handler = {
-		.cb = button_handler_cb,
-	};
-
-	dk_button_handler_add(&button_handler);
-	k_work_init_delayable(&attention_blink_work, attention_blink);
-
-	return &comp;
-}
-
-void main(void)
-{	
-	/* uart */
-	uart_init(dev);
-
-	int err;
-
-	printk("Press button 1 within 10 seconds to make this node a provisioner\n");
-	if (wait_for_button_press(10)) {
-		provision();
-		printk("Done provisioning\n");
-	} else {
-		err = bt_enable(NULL);
-		bt_ready();
-		if (err) {
-			printk("Bluetooth init failed (err %d)\n", err);
-			return;
-		}
-
-	}
-
-	printk("Main reached end :)\n");
-
-	while (1) {
-		k_sleep(K_SECONDS(1));
-	}
+    while (1) {
+        k_sleep(K_SECONDS(1));
+        if (bt_mesh_is_provisioned()) {
+            printk("Node is provisioned!\n");
+            break;
+        }
+    }
+    printk("Ready to do work!\n");
+    while (1) {
+        k_sleep(K_SECONDS(1));
+    }
 }
