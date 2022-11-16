@@ -1,5 +1,6 @@
 // Create WebSocket connection.
-var socket = new WebSocket('ws://raspberrypi.local:8080');
+var wsUrl = 'ws://localhost:8080';
+var socket = new WebSocket(wsUrl);
 
 var isOpening = false;
 var connectWS = function () {
@@ -13,7 +14,7 @@ var connectWS = function () {
         } else {
             isOpening = true;
             // Create WebSocket connection.
-            socket = new WebSocket('ws://raspberrypi.local:8080');
+            socket = new WebSocket(wsUrl);
         }
     }, 1000);
 }
