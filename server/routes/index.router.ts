@@ -2,7 +2,7 @@ import express from 'express';
 var router = express.Router();
 import ws from 'ws';
 import dotenv from 'dotenv'
-import initSerial from '../services/serial.service';
+import {initSerial, serialport, nodeList} from '../services/serial.service';
 
 dotenv.config();
 
@@ -13,7 +13,16 @@ wsServer.on('connection', socket => {
   socket.on('message', (message) => {
     console.log(message);
     // Reply
-    socket.send('Hello back!');
+    if (message.toString('utf8') == 'INIT') {
+      socket.send('Connected to websocket server');
+    } else if (message.toString('utf8').indexOf('rmNode') > -1) {
+      var nodeId = parseInt(message.toString('utf8').split('rmNode:')[1]);
+      if (nodeList.indexOf(nodeId) > -1) {
+        serialport.write(nodeId + '\r\n');
+        delete nodeList[nodeList.indexOf(nodeId)];
+        socket.send('Removed node ' + nodeId);
+      }
+    }
   });
 });
 

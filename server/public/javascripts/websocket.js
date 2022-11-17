@@ -19,9 +19,14 @@ var connectWS = function () {
     }, 1000);
 }
 
+var rmNode = function (node) {
+    socket.send('rmNode:' + node);
+}
+
+
 // Connection opened
 socket.addEventListener('open', (event) => {
-    socket.send('Hello Server!');
+    socket.send('INIT');
 });
 
 // On connection close
@@ -36,6 +41,7 @@ socket.addEventListener('close', (event) => {
 socket.addEventListener('message', (event) => {
     console.log('Message from server ', event.data);
     var msgElement = document.createElement("p");
+    msgElement.id = event.data.split(':')[0];
     msgElement.innerHTML = event.data;
     document.getElementById("output").appendChild(msgElement);
 });

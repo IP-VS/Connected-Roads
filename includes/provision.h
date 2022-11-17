@@ -282,7 +282,7 @@ static int bt_ready(void)
 	} else {
 		printk("Provisioning completed\n");
 	}
-
+ 
 	return 0;
 }
 
@@ -354,7 +354,26 @@ void provision(void)
 	button_init();
 #endif
 
+	// Set time variable
+	int64_t time = k_uptime_get();
+
 	while (1) {
+		
+		// If time is greater than 20 seconds
+		if (k_uptime_get() - time > 20000) {
+			/* uart read */
+			while(1) {
+			char buf[1];
+			if (!uart_read_until(dev, buf, sizeof(buf),  '\n')) {
+			}
+				// Buffer to int
+				uint16_t value = atoi(buf);
+				printk("Remove the node 0x%04x\n", value);
+				// Remove node from the network
+				bt_mesh_cdb_node_del(bt_mesh_cdb_node_get(node_addr), true);
+				printk("Node removed");
+			}
+		}
 		k_sem_reset(&sem_unprov_beacon);
 		k_sem_reset(&sem_node_added);
 		bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
