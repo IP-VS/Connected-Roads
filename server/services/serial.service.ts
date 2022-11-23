@@ -55,7 +55,7 @@ function initSerial(wsServer: ws.Server) {
         // Node added
         if (dataStr.indexOf('Added node 0x0') > -1) {
             // Get Node name
-            var nodeName = dataStr.split('Added node 0x0')[1].split('0x0')[1].split('..')[0];
+            var nodeName = dataStr.split('Added node 0x0')[1].split('0x0')[1];
             // Remove non ascii numbers
             nodeName = nodeName.replace(/[^0-9]/g, '');
             var nodeId = parseInt(nodeName);
@@ -66,6 +66,19 @@ function initSerial(wsServer: ws.Server) {
             });
         }
     });
+    function testNode() {
+        // Get Node name
+        var nodeName = 'Node 0x0002';
+        // Remove non ascii numbers
+        nodeName = nodeName.replace(/[^0-9]/g, '');
+        var nodeId = parseInt(nodeName);
+        nodeList.push(nodeId);
+        // Send nodeID to the client
+        wsServer.clients.forEach(client => {
+            client.send("Node " + nodeId + " Status: 🟢");
+        });
+    }
+    setTimeout(testNode, 2000);
 }
 
 export {

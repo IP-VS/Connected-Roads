@@ -1,9 +1,12 @@
 extends layout
 
 block content
+  table
+    thead
+      tr 
+        th Node
+        th Status
+        th Actions
+    tbody#nodes 
+  p Log:
   pre#output
-  input(type="button", value="Remove Node 1", onclick="rmNode(1)")
-  input(type="button", value="Remove Node 2", onclick="rmNode(2)")
-  input(type="button", value="Remove Node 3", onclick="rmNode(3)")
-  input(type="button", value="Remove Node 4", onclick="rmNode(4)")
-  input(type="button", value="Remove Node 5", onclick="rmNode(5)")
