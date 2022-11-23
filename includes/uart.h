@@ -48,32 +48,12 @@
 /*
  * Wait for the uart device to connect and for uart to be ready.
  */
-static inline void uart_init(const struct device* uart_dev) {
-    uint32_t dtr = 0;
-    if (usb_enable(NULL)) {
-        return;
-    }
-    while (!dtr) {
-        uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_DTR, &dtr);
-        /* Give CPU resources to low priority threads. */
-        k_sleep(K_MSEC(UART_POLL_TIME_MS));
-    }
-    if (!device_is_ready(uart_dev)) {
-        printk("UART device not found!");
-        return;
-    }
-    /* configure interrupt and callback to receive data */
-    uart_irq_rx_enable(uart_dev);
-}
+void uart_init(const struct device* uart_dev);
 
 /*
  * Write the buffer to the output uart device.
  */
-static inline void uart_write(const struct device* uart_dev, const char* buf, size_t len) {
-    for (int i = 0; i < len; i++) {
-        uart_poll_out(uart_dev, buf[i]);
-    }
-}
+void uart_write(const struct device* uart_dev, const char* buf, size_t len);
 
 /*
  * Write the string to the output uart device.
@@ -86,18 +66,7 @@ static inline void uart_write(const struct device* uart_dev, const char* buf, si
  * Returns false if the buffer was exhausted before reading the
  * specified character.
  */
-static inline bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char stop) {
-    size_t i = 0;
-    do {
-        if (i > len) {
-            return false;
-        }
-        while (uart_poll_in(uart_dev, &buf[i]) < 0)
-            k_sleep(K_MSEC(UART_POLL_TIME_MS));
-        ++i;
-    } while (buf[i - 1] != stop);
-    return true;
-}
+bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char stop);
 
 /*
  * Read from uart device until a newline character was read or the buffer was exhausted.
@@ -108,9 +77,4 @@ static inline bool uart_read_until(const struct device* uart_dev, char* buf, siz
 /*
  * Read from uart device until buffer is full.
  */
-static inline void uart_read(const struct device* uart_dev, char* buf, size_t len) {
-    for (size_t i = 0; i < len; ++i) {
-        while (uart_poll_in(uart_dev, &buf[i]) < 0)
-            k_sleep(K_MSEC(UART_POLL_TIME_MS));
-    }
-}
+void uart_read(const struct device* uart_dev, char* buf, size_t len);

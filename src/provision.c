@@ -1,11 +1,18 @@
 #include "provision.h"
 #include "custom_assert.h"
 
+#include <zephyr/drivers/hwinfo.h>
+
 static const uint16_t net_idx;
 static const uint16_t app_idx;
 static uint16_t self_addr = 1, node_addr;
-static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
+static uint8_t dev_uuid[16];
 static uint8_t node_uuid[16];
+
+void dev_uuid_init() {
+    // hwinfo_get_device_id(dev_uuid, 16);
+    bt_rand(dev_uuid, 16);
+}
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
 K_SEM_DEFINE(sem_node_added, 0, 1);
@@ -383,7 +390,7 @@ void provision(void) {
             continue;
         }
 
-        printk("Waiting for node to be added...\n");
+        /*printk("Waiting for node to be added...\n");
         err = k_sem_take(&sem_node_added, K_SECONDS(10));
         if (err == -EAGAIN) {
             printk("Timeout waiting for node to be added\n");
@@ -392,7 +399,7 @@ void provision(void) {
             printk("Node adding semaphore taken without waiting\n");
         }
 
-        printk("Added node 0x%04x\n", node_addr);
+        printk("Added node 0x%04x\n", node_addr);*/
     }
 }
 int run_bt_node(void) {
@@ -402,7 +409,7 @@ int run_bt_node(void) {
     err = bt_mesh_init(&node_prov, &node_comp);
     if (err) {
         printk("Initializing mesh failed (err %d)\n", err);
-        return;
+        return 1;
     }
 
     printk("Mesh initialized\n");

@@ -42,3 +42,5 @@ bool wait_for_button_press(int timeout_s);
 void provision(void);
 
 int run_bt_node(void);
+
+void dev_uuid_init();
