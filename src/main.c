@@ -17,43 +17,6 @@
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
     "Console device is not ACM CDC UART device");
 
-static const struct bt_mesh_comp node_comp = {
-    .cid = CONFIG_BT_COMPANY_ID,
-    .elem = elements,
-    .elem_count = ARRAY_SIZE(elements),
-};
-
-static const struct bt_mesh_prov node_prov = {
-    .uuid = dev_uuid,
-};
-
-static int run_bt_node(void) {
-    uint8_t net_key[16], dev_key[16];
-    int err;
-
-    err = bt_mesh_init(&node_prov, &node_comp);
-    if (err) {
-        printk("Initializing mesh failed (err %d)\n", err);
-        return;
-    }
-
-    printk("Mesh initialized\n");
-
-    if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-        printk("Loading stored settings\n");
-        settings_load();
-    }
-
-    err = bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
-    if (err) {
-        printk("bt_mesh_prov_enable failed (err %d)\n", err);
-    } else {
-        printk("bt_mesh_prov_enable ok\n");
-    }
-
-    return 0;
-}
-
 void main(void) {
     /* uart */
     uart_init(dev);
