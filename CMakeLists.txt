@@ -2,9 +2,10 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 set(QEMU_EXTRA_FLAGS -s)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(console)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
-target_include_directories(app PRIVATE includes)
+target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/includes)
