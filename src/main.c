@@ -25,6 +25,8 @@ void main(void) {
 
     int err;
 
+    dev_uuid_init();
+
     button_init();
 
     printk("Press button 1 within 5 seconds to make this node a provisioner\n");
