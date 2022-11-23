@@ -58,6 +58,8 @@ void main(void) {
     /* uart */
     uart_init(dev);
 
+    printk("Startup\n");
+
     int err;
 
     button_init();
