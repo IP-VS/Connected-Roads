@@ -364,8 +364,11 @@ void provision(void) {
 #endif
 
     while (1) {
+        printk("Resetting unprov beacon semaphore\n");
         k_sem_reset(&sem_unprov_beacon);
+        printk("Resetting node added semaphore\n");
         k_sem_reset(&sem_node_added);
+        printk("Checking for unconfigured nodes\n");
         bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
 
         printk("Waiting for unprovisioned beacon...\n");
@@ -383,6 +386,8 @@ void provision(void) {
         if (err == -EAGAIN) {
             printk("Timed out, button 1 wasn't pressed in time.\n");
             continue;
+        } else if (err == -EBUSY) {
+            printk("Button pressed semaphore taken without waiting\n");
         }
 #endif
 
@@ -398,6 +403,8 @@ void provision(void) {
         if (err == -EAGAIN) {
             printk("Timeout waiting for node to be added\n");
             continue;
+        } else if (err == -EBUSY) {
+            printk("Node adding semaphore taken without waiting\n");
         }
 
         printk("Added node 0x%04x\n", node_addr);
