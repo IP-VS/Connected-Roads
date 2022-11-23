@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/settings/settings.h>
 
+#include "custom_assert.h"
 #include "printk.h"
 
 #define SW0_NODE DT_ALIAS(sw0)
@@ -31,6 +33,7 @@ static void health_current_status(struct bt_mesh_health_cli* cli, uint16_t addr,
     uint8_t test_id, uint16_t cid, uint8_t* faults,
     size_t fault_count) {
     size_t i;
+    assert_not_null(faults);
 
     printk("Health Current Status from 0x%04x\n", addr);
 
@@ -85,6 +88,7 @@ static void setup_cdb(void) {
 }
 
 static void configure_self(struct bt_mesh_cdb_node* self) {
+    assert_not_null(self);
     struct bt_mesh_cdb_app_key* key;
     uint8_t status = 0;
     int err;
@@ -131,6 +135,8 @@ static void configure_node(struct bt_mesh_cdb_node* node) {
     struct bt_mesh_comp_p0 comp;
     uint8_t status;
     int err, elem_addr;
+
+    assert_not_null(node);
 
     printk("Configuring node 0x%04x...\n", node->addr);
 
@@ -279,6 +285,7 @@ static int bt_ready(void) {
 }
 
 static uint8_t check_unconfigured(struct bt_mesh_cdb_node* node, void* data) {
+    assert_not_null(node);
     if (!atomic_test_bit(node->flags, BT_MESH_CDB_NODE_CONFIGURED)) {
         if (node->addr == self_addr) {
             configure_self(node);
@@ -300,6 +307,8 @@ static void button_pressed(const struct device* dev, struct gpio_callback* cb, u
 
 static void button_init(void) {
     int ret;
+
+    assert_not_null(button.port);
 
     if (!device_is_ready(button.port)) {
         printk("Error: button device %s is not ready\n", button.port->name);
