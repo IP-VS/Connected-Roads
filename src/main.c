@@ -29,8 +29,8 @@ void main(void) {
 
     button_init();
 
-    printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
-    if (wait_for_button_press(5)) {
+    printk("Press button 1 within 5 seconds to NOT make this node a provisioner\r\n");
+    if (!wait_for_button_press(5)) {
         provision();
         printk("Done provisioning\r\n");
     } else {
