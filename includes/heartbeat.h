@@ -24,6 +24,7 @@ struct k_sem sem;
 #define SUBSCRIBE_PERIOD_SEC 30
 #define PUBLISHER_ADDR  0x000f
 #define PUBLISH_PERIOD_SEC 1
+#define GROUP_ADDR 0xc000
 
 #define PUBLISH_MSG_CNT 10
 #define PUBLISH_TTL 0
@@ -53,7 +54,7 @@ static const struct bt_mesh_hb_cb hb_cb = {
 
 // Heartbeat Publication parameters (every 10 sec)
 static const struct bt_mesh_hb_pub hb_pub = {
-	.dst = BT_MESH_ADDR_UNASSIGNED,
+	.dst = GROUP_ADDR,
 	.count = 1,
 	.ttl = 5,
 	.feat = BT_MESH_FEAT_RELAY,
@@ -63,8 +64,8 @@ static const struct bt_mesh_hb_pub hb_pub = {
 
 // Heartbeat Subscription parameters
 static struct bt_mesh_hb_sub hb_sub = {
-	.src = BT_MESH_ADDR_UNASSIGNED,
-	.dst = SUBSCRIBER_ADDR,
+	.src = PUBLISHER_ADDR,
+	.dst = GROUP_ADDR,
 	.min_hops = 1,
 	.max_hops = 5,
 	.period = BT_MESH_PUB_PERIOD_SEC(5),
