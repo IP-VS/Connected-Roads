@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+  app:
+    image: nordicplayground/nrfconnect-sdk:v2.1-branch
+    # run forever
+    command: tail -f /dev/null
+    volumes:
+      - ./:/workdir/project
+    # privileged mode is required for flashing
+    privileged: true
