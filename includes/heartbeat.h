@@ -64,7 +64,7 @@ static const struct bt_mesh_hb_pub hb_pub = {
 // Heartbeat Subscription parameters
 static struct bt_mesh_hb_sub hb_sub = {
 	.src = BT_MESH_ADDR_UNASSIGNED,
-	.dst = SUB,
+	.dst = SUBSCRIBER_ADDR,
 	.min_hops = 1,
 	.max_hops = 5,
 	.period = BT_MESH_PUB_PERIOD_SEC(5),
