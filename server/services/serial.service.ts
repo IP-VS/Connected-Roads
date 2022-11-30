@@ -66,9 +66,9 @@ function initSerial(wsServer: ws.Server) {
             });
         }
     });
-    function testNode() {
+    function testNode(num: number) {
         // Get Node name
-        var nodeName = 'Node 0x0002';
+        var nodeName = 'Node 0x000'+num;
         // Remove non ascii numbers
         nodeName = nodeName.replace(/[^0-9]/g, '');
         var nodeId = parseInt(nodeName);
@@ -78,7 +78,9 @@ function initSerial(wsServer: ws.Server) {
             client.send("Node " + nodeId + " Status: 🟢");
         });
     }
-    setTimeout(testNode, 2000);
+    setTimeout(() => testNode(1), 3000);
+    setTimeout(() => testNode(2), 4000);
+    setTimeout(() => testNode(3), 5000);
 }
 
 export {
