@@ -1,5 +1,6 @@
 #include "provision.h"
 #include "custom_assert.h"
+#include "ip_model.h"
 
 #include <zephyr/drivers/hwinfo.h>
 
@@ -20,17 +21,40 @@ K_SEM_DEFINE(sem_node_added, 0, 1);
 K_SEM_DEFINE(sem_button_pressed, 0, 1);
 #endif
 
+const struct bt_mesh_model_op _opcode_list[] = {
+    { MESSAGE_SET_OPCODE, MESSAGE_SET_LEN, handle_message_set },
+    { MESSAGE_ACK_OPCODE, MESSAGE_ACK_LEN, handle_message_ack },
+    { MESSAGE_STATUS_OPCODE, MESSAGE_STATUS_LEN, handle_message_status },
+    BT_MESH_MODEL_OP_END,
+};
+
 static struct bt_mesh_cfg_cli cfg_cli = {};
 
 static struct bt_mesh_health_cli health_cli = {
     .current_status = health_current_status,
 };
 
-static struct bt_mesh_model root_models[] = {
-    BT_MESH_MODEL_CFG_SRV,
-    BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-    BT_MESH_MODEL_HEALTH_CLI(&health_cli),
+/*
+static struct bt_mesh_model_pub pub_ctx = {
+    .msg = NET_BUF_SIMPLE(BT_MESH_MODEL_BUF_LEN(MESSAGE_SET_OPCODE, MESSAGE_SET_LEN)),
 };
+*/
+
+static int msg_model_start(struct bt_mesh_model* model) {
+    printk("Started message model with key 0x%04x\r\n", model->keys[0]);
+}
+
+static struct bt_mesh_model_cb model_cbs = {
+    .start = msg_model_start,
+};
+
+static struct bt_mesh_model root_models[]
+    = {
+          BT_MESH_MODEL_CFG_SRV,
+          BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+          BT_MESH_MODEL_HEALTH_CLI(&health_cli),
+          BT_MESH_MODEL_VND_CB(COMPANY_ID, MODEL_ID, _opcode_list, NULL, NULL, &model_cbs),
+      };
 
 static struct bt_mesh_elem elements[] = {
     BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
@@ -433,6 +457,18 @@ int run_bt_node(void) {
         printk("bt_mesh_prov_enable failed (err %d)\r\n", err);
     } else {
         printk("bt_mesh_prov_enable ok\r\n");
+    }
+
+    while (1) {
+        for (uint16_t i = 1; i < 4; ++i) {
+            int err = send_message(&root_models[3], i);
+            if (err) {
+                printk("Error sending to 0x%04x: %d\r\n", i, err);
+            } else {
+                printk("Successfully sent message to 0x%04x\r\n", i);
+            }
+        }
+        k_sleep(K_SECONDS(1));
     }
 
     return 0;
