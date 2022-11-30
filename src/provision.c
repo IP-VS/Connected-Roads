@@ -137,6 +137,8 @@ void configure_self(struct bt_mesh_cdb_node* self) {
         return;
     }
 
+    printk("Got app-key 0x%04x from CDB\r\n", key->keys[0].app_key);
+
     /* Add Application Key */
     err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
         app_idx, key->keys[0].app_key, &status);
@@ -145,6 +147,7 @@ void configure_self(struct bt_mesh_cdb_node* self) {
             status);
         return;
     }
+    printk("Added app-key 0x%04x\r\n", key->keys[0].app_key);
 
     err = bt_mesh_cfg_mod_app_bind(self->net_idx, self->addr, self->addr,
         app_idx, BT_MESH_MODEL_ID_HEALTH_CLI,
@@ -154,6 +157,7 @@ void configure_self(struct bt_mesh_cdb_node* self) {
             status);
         return;
     }
+    printk("Bound app-key 0x%04x\r\n", key->keys[0].app_key);
 
     atomic_set_bit(self->flags, BT_MESH_CDB_NODE_CONFIGURED);
 
