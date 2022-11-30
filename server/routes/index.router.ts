@@ -2,7 +2,8 @@ import express from 'express';
 var router = express.Router();
 import ws from 'ws';
 import dotenv from 'dotenv'
-import {initSerial, serialport, nodeList} from '../services/serial.service';
+import {initSerial, serialport, connected} from '../services/serial.service';
+import { MeshNode, NodeList } from '../models/node.model';
 
 dotenv.config();
 
@@ -15,12 +16,20 @@ wsServer.on('connection', socket => {
     // Reply
     if (message.toString('utf8') == 'INIT') {
       socket.send('Connected to websocket server');
+      // Send node list
+      socket.send(NodeList.toString());
+      // Device status
+      if (connected) {
+        socket.send('device:Connected');
+      } else {
+        socket.send('device:Disconnected');
+      }
     } else if (message.toString('utf8').indexOf('rmNode') > -1) {
       var nodeId = parseInt(message.toString('utf8').split('rmNode:')[1]);
-      if (nodeList.indexOf(nodeId) > -1) {
+      if (NodeList.removeNode(nodeId)) {
         serialport.write(nodeId + '\r\n');
-        delete nodeList[nodeList.indexOf(nodeId)];
-        socket.send('Removed node ' + nodeId);
+        socket.send(NodeList.toString());
+        socket.send('node:Removed');
       }
     }
   });

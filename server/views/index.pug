@@ -1,12 +1,19 @@
 extends layout
 
 block content
-  table
-    thead
-      tr 
-        th Node
-        th Status
-        th Actions
-    tbody#nodes 
-  p Log:
-  pre#output
+  div.container
+    div.table
+      table
+        thead
+          tr 
+            th Node
+            th Status
+            th Actions
+        tbody#nodes 
+      div.log
+        p Log:
+        pre#output
+    div.status
+      p Status:
+      pre#serverconnection
+      pre#deviceconnection

@@ -1,10 +1,11 @@
 import ws from 'ws';
 import { SerialPort } from 'serialport'
+import { MeshNode, NodeList } from '../models/node.model';
 import dotenv from 'dotenv'
 
 dotenv.config();
 var serialport: SerialPort;
-var nodeList: any = [];
+var connected = false;
 
 // Serial functions
 function initSerial(wsServer: ws.Server) {
@@ -24,11 +25,20 @@ function initSerial(wsServer: ws.Server) {
         console.log('Serial port closed');
         // Try reconnecting 
         connectSerial();
+        // Send to socket
+        wsServer.clients.forEach(client => {
+            client.send('device:Disconnected');
+        });
+        connected = false;
     });
 
     // On open
     serialport.on('open', () => {
         console.log('Connected to serial port');
+        wsServer.clients.forEach(client => {
+            client.send('device:Connected');
+        });
+        connected = true;
     });
 
     /* Open serial */
@@ -48,43 +58,70 @@ function initSerial(wsServer: ws.Server) {
     }
     connectSerial();
 
-
     serialport.on('data', function (data) {
         console.log('Data:', data.toString('utf8'));
         var dataStr = data.toString('utf8');
         // Node added
         if (dataStr.indexOf('Added node 0x0') > -1) {
-            // Get Node name
-            var nodeName = dataStr.split('Added node 0x0')[1].split('0x0')[1];
-            // Remove non ascii numbers
-            nodeName = nodeName.replace(/[^0-9]/g, '');
-            var nodeId = parseInt(nodeName);
-            nodeList.push(nodeId);
+            try {
+                // Set device status
+                wsServer.clients.forEach(client => {
+                    client.send('device:Connected');
+                });
+                // Get Node name
+                var nodeName = dataStr.split('Added node 0x0')[1];
+                var temp = nodeName.split('0x0')[1];
+                if (temp != undefined) {
+                    nodeName = temp;
+                }
+                // Remove non ascii numbers
+                nodeName = nodeName.replace(/[^0-9]/g, '');
+                // Create new node
+                var newNode = new MeshNode(
+                    parseInt(nodeName),
+                    nodeName,
+                    '🟢'
+                );
+                NodeList.addNode(newNode);
+                // Send nodeID to the client
+                wsServer.clients.forEach(client => {
+                    client.send(NodeList.toString());
+                });
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        // New device found
+        if (dataStr.indexOf('detected') > -1) {
             // Send nodeID to the client
             wsServer.clients.forEach(client => {
-                client.send("Node " + nodeId + " Status: 🟢");
+                client.send('device:Press Button');
             });
         }
     });
-    function testNode(num: number) {
-        // Get Node name
-        var nodeName = 'Node 0x000'+num;
-        // Remove non ascii numbers
-        nodeName = nodeName.replace(/[^0-9]/g, '');
-        var nodeId = parseInt(nodeName);
-        nodeList.push(nodeId);
-        // Send nodeID to the client
-        wsServer.clients.forEach(client => {
-            client.send("Node " + nodeId + " Status: 🟢");
-        });
-    }
-    setTimeout(() => testNode(1), 3000);
-    setTimeout(() => testNode(2), 4000);
-    setTimeout(() => testNode(3), 5000);
+    // function testNode(num: number) {
+    //     // Get Node name
+    //     var nodeName = 'Node 0x000'+num;
+    //     // Remove non ascii numbers
+    //     nodeName = nodeName.replace(/[^0-9]/g, '');
+    //     var newNode: Node = {
+    //         id: parseInt(nodeName),
+    //         name: nodeName,
+    //         status: '🟢'
+    //     }
+    //     nodeList.push(newNode);
+    //     // Send nodelist to client
+    //     wsServer.clients.forEach(client => {
+    //         client.send(JSON.stringify(nodeList));
+    //     });
+    // }
+    // setTimeout(() => testNode(1), 3000);
+    // setTimeout(() => testNode(2), 4000);
+    // setTimeout(() => testNode(3), 5000);
 }
 
 export {
     initSerial,
     serialport,
-    nodeList
+    connected
 };

@@ -7,6 +7,18 @@ a {
   color: #00B7FF;
 }
 
+.log {
+  position: fixed;
+  bottom: 0;
+  left: 60px;
+}
+
+#output {
+  height: 200px;
+  width: 600px;
+  overflow: auto;
+}
+
 pre {
   color: grey;
 }
@@ -21,4 +33,9 @@ td, th {
 
 table {
   border-collapse: collapse;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 80% 20%;
 }
