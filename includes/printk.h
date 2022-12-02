@@ -20,17 +20,24 @@
 
 #include "uart.h"
 
-const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 // check for VLA support
 #ifdef __STDC_NO_VLA__
 #error "VLA NOT SUPPORTED"
 #endif
-// override printk
-#define printk(...)                                \
+
+#define printk_raw(...)                            \
     do {                                           \
         int size = snprintf(NULL, 0, __VA_ARGS__); \
         char buf[size + 1];                        \
         snprintf(buf, sizeof(buf), __VA_ARGS__);   \
         uart_write(dev, buf, sizeof(buf));         \
+    } while (false)
+
+// override printk
+#define printk(...)                                \
+    do {                                           \
+        printk_raw("%s:%d: ", __FILE__, __LINE__); \
+        printk_raw(__VA_ARGS__);                   \
     } while (false)
