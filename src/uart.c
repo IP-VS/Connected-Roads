@@ -46,8 +46,8 @@ bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char 
             k_sleep(K_MSEC(UART_POLL_TIME_MS));
         ++i;
     } while (buf[i - 1] != stop);
-    return true;
     k_mutex_unlock(&uart_mtx);
+    return true;
 }
 void uart_read(const struct device* uart_dev, char* buf, size_t len) {
     k_mutex_lock(&uart_mtx, K_FOREVER);
