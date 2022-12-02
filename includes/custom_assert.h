@@ -9,6 +9,7 @@
         if (_val) {                                                                   \
             printk("Assertion failed: %s is null in %s:%d (%s), aborting.\r\n", #ptr, \
                 __FILE__, __LINE__, __func__);                                        \
+            abort();                                                                  \
         }                                                                             \
     } while (0)
 
@@ -18,5 +19,6 @@
         if (!_val) {                                                                                  \
             printk("Assertion failed: %s == %s is false in %s:%d (%s), aborting.\r\n", #left, #right, \
                 __FILE__, __LINE__, __func__);                                                        \
+            abort();                                                                                  \
         }                                                                                             \
     } while (0)

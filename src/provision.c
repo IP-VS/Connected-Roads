@@ -233,13 +233,11 @@ void unprovisioned_beacon(uint8_t uuid[16],
     uint32_t* uri_hash) {
     assert_not_null(uuid);
     memcpy(node_uuid, uuid, 16);
-    assert_equal(k_sem_count_get(&sem_unprov_beacon), 0);
     k_sem_give(&sem_unprov_beacon);
 }
 void node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
     printk("Node added: net_idx=%04x, addr=%04x, num_elem=%d\r\n", net_idx, addr, num_elem);
     node_addr = addr;
-    assert_equal(k_sem_count_get(&sem_node_added), 0);
     k_sem_give(&sem_node_added);
     printk("Sem given for node_added\r\n");
 }
