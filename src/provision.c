@@ -467,3 +467,7 @@ int run_bt_node(void) {
 
     return 0;
 }
+
+struct bt_mesh_model* get_msg_model(void) {
+    return &vnd_models[0];
+}

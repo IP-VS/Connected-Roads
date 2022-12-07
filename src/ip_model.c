@@ -1,6 +1,7 @@
 #include "ip_model.h"
 
 #include "printk.h"
+#include "provision.h"
 #include <string.h>
 
 bool samples_deserialize(const uint8_t* buf, size_t size, struct Samples* out_samples) {
@@ -108,15 +109,16 @@ int send_message(struct bt_mesh_model* model, uint16_t addr) {
     return bt_mesh_model_send(model, &ctx, &buf, &send_cb, (void*)addr);
 }
 
-bool send_micdata_from_queue(struct bt_mesh_model* model, uint16_t addr) {
+bool send_micdata_from_queue(uint16_t addr) {
     struct Samples samples;
     if (!dequeue_samples_to_send(&samples)) {
         return false;
     }
 
+    // TODO: do for all addresses, not just one.
     struct bt_mesh_msg_ctx ctx = {
         .addr = addr,
-        .app_idx = model->keys[0],
+        .app_idx = get_msg_model()->keys[0],
         .send_ttl = BT_MESH_TTL_DEFAULT,
         .send_rel = true,
     };

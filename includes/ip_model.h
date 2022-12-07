@@ -36,4 +36,4 @@ int send_message(struct bt_mesh_model* model, uint16_t addr);
 
 // Checks the samples queue for new data, sends it if available.
 // Returns `true` if data was found to be sent, `false` if no data was sent.
-bool send_micdata_from_queue(struct bt_mesh_model* model, uint16_t addr);
+bool send_micdata_from_queue(uint16_t addr);

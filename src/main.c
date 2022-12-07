@@ -54,7 +54,8 @@ void main(void) {
     }
     printk("Ready to do work!\r\n");
     while (1) {
-        if (!send_micdata_from_queue()) {
+        // TODO: Adjust address here if you want to test
+        if (!send_micdata_from_queue(0x01)) {
             k_sleep(K_SECONDS(1));
         }
     }

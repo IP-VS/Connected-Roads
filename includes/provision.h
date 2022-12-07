@@ -44,3 +44,5 @@ void provision(void);
 int run_bt_node(void);
 
 void dev_uuid_init();
+
+struct bt_mesh_model* get_msg_model(void);
