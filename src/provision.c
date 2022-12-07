@@ -22,9 +22,7 @@ K_SEM_DEFINE(sem_button_pressed, 0, 1);
 #endif
 
 const struct bt_mesh_model_op _opcode_list[] = {
-    { MESSAGE_SET_OPCODE, MESSAGE_SET_LEN, handle_message_set },
-    { MESSAGE_ACK_OPCODE, MESSAGE_ACK_LEN, handle_message_ack },
-    { MESSAGE_STATUS_OPCODE, MESSAGE_STATUS_LEN, handle_message_status },
+    { MESSAGE_MICDATA_OPCODE, MESSAGE_MICDATA_LEN, handle_message_micdata },
     BT_MESH_MODEL_OP_END,
 };
 
@@ -53,12 +51,16 @@ static struct bt_mesh_model root_models[]
           BT_MESH_MODEL_CFG_SRV,
           BT_MESH_MODEL_CFG_CLI(&cfg_cli),
           BT_MESH_MODEL_HEALTH_CLI(&health_cli),
-          BT_MESH_MODEL_VND_CB(COMPANY_ID, MODEL_ID, _opcode_list, NULL, NULL, &model_cbs),
       };
 
-static struct bt_mesh_elem elements[] = {
-    BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
+static struct bt_mesh_model vnd_models[] = {
+    BT_MESH_MODEL_VND_CB(COMPANY_ID, MODEL_ID, _opcode_list, NULL, NULL, &model_cbs),
 };
+
+static struct bt_mesh_elem elements[]
+    = {
+          BT_MESH_ELEM(0, root_models, vnd_models),
+      };
 
 static const struct bt_mesh_comp comp = {
     .cid = BT_COMP_ID_LF,
@@ -232,7 +234,7 @@ void configure_node(struct bt_mesh_cdb_node* node) {
         for (int i = 0; i < elem.nvnd; i++) {
             struct bt_mesh_mod_id_vnd id = bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
 
-            printk("Binding AppKey to model 0x%03x:%04x:%04x\r\n",
+            printk("Binding AppKey 0x%04x to model 0x%03x:%04x:%04x\r\n",
                 elem_addr, id.company, id.id);
 
             err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, node->addr,
@@ -465,7 +467,7 @@ int run_bt_node(void) {
 
     while (1) {
         for (uint16_t i = 1; i < 4; ++i) {
-            int err = send_message(&root_models[3], i);
+            int err = send_message(&vnd_models[0], i);
             if (err) {
                 printk("Error sending to 0x%04x: %d\r\n", i, err);
             } else {
