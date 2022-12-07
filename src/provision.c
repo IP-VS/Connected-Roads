@@ -465,17 +465,5 @@ int run_bt_node(void) {
         printk("bt_mesh_prov_enable ok\r\n");
     }
 
-    while (1) {
-        for (uint16_t i = 1; i < 4; ++i) {
-            int err = send_message(&vnd_models[0], i);
-            if (err) {
-                printk("Error sending to 0x%04x: %d\r\n", i, err);
-            } else {
-                printk("Successfully sent message to 0x%04x\r\n", i);
-            }
-        }
-        k_sleep(K_SECONDS(1));
-    }
-
     return 0;
 }

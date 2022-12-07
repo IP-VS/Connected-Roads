@@ -12,6 +12,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/zephyr.h>
 
+#include "ip_model.h"
 #include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
@@ -53,6 +54,8 @@ void main(void) {
     }
     printk("Ready to do work!\r\n");
     while (1) {
-        k_sleep(K_SECONDS(1));
+        if (!send_micdata_from_queue()) {
+            k_sleep(K_SECONDS(1));
+        }
     }
 }
