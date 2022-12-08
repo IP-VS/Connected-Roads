@@ -43,6 +43,15 @@ var socketListener = function () {
             var nodeStatus = msg.split(':')[1];
             log('Node status changed: ' + nodeStatus);
         }
+        // Microphone data
+        if (msg.startsWith('micdata:')) {
+            // if (msg.split[','].length < 10) {
+            //     // Not enough data to plot
+            //     return;
+            // }
+            log('Microphone data received: ' + msg.replace(/[^0-9,]/g, ''));
+        }
+            
         // Received node list parse from json string
         try {
             var nodes = JSON.parse(msg);
