@@ -132,6 +132,6 @@ bool send_micdata_from_queue(uint16_t addr) {
     }
     buf.len = SAMPLES_SERIALIZE_BUFFER_SIZE;
 
-    printk("Sending MICDATA message to 0x%04x with app_idx 0x%04x\r\n", addr, model->keys[0]);
+    printk("Sending MICDATA message to 0x%04x with app_idx 0x%04x\r\n", addr, get_msg_model()->keys[0]);
     return bt_mesh_model_send(model, &ctx, &buf, &send_cb, (void*)addr);
 }
