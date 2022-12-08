@@ -13,6 +13,7 @@
 #include <zephyr/zephyr.h>
 
 #include "provision.h"
+#include "microphone.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
     "Console device is not ACM CDC UART device");
@@ -21,7 +22,7 @@ void main(void) {
     /* uart */
     uart_init(dev);
 
-    printk("Startup\r\n");
+    printk("Startup \r\n");
 
     int err;
 
@@ -48,6 +49,8 @@ void main(void) {
         k_sleep(K_SECONDS(1));
         if (bt_mesh_is_provisioned()) {
             printk("Node is provisioned!\r\n");
+            printk("Mic Init \r\n");
+            microphone_init();
             break;
         }
     }
