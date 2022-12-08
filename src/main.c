@@ -70,6 +70,5 @@ void main(void) {
         //     printk("Fake work\n");
         // }
         k_sleep(K_SECONDS(1));
-        }
     }
 }

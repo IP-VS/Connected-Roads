@@ -16,7 +16,7 @@ static const struct adc_dt_spec adc_channels[] = {
                          DT_SPEC_AND_COMMA)};
 
 static size_t adc_channel_idxs[NUM_CHANNELS] = {0, 1};
-static int16_t adc_bufs[NUM_CHANNELS][NUM_SAMPLES_PER_TRIGGER];
+static adc_value_t adc_bufs[NUM_CHANNELS][NUM_OVERSAMPLING];
 
 static struct adc_sequence_options adc_options[NUM_CHANNELS];
 static struct adc_sequence adc_sequences[NUM_CHANNELS];
@@ -25,7 +25,24 @@ struct k_timer adc_timer;
 
 static void adc_work_handler(struct k_work *work)
 {
-    // TODO
+    int err;
+    for (size_t i = 0; i < NUM_CHANNELS; i++)
+    {
+        size_t channel_idx = adc_channel_idxs[i];
+        (void) adc_sequence_init_dt(&adc_channels[channel_idx], &adc_sequences[i]);
+        err = adc_read(adc_channels[channel_idx].dev, &adc_sequences[i]);
+
+        // if (err < 0) {
+        //     printk("adc error (%d) channel %d\n", err, i);
+        //     continue;
+        // }
+
+        printk("channel %d: ", i);
+        for (size_t k = 0; k < NUM_OVERSAMPLING; k++)
+        {
+            printk("%d,", adc_bufs[i][k]);
+        }
+    }
 }
 
 K_WORK_DEFINE(adc_work, adc_work_handler);
@@ -45,10 +62,11 @@ int start_adc_sampling()
         size_t channel_idx = adc_channel_idxs[i];
 
         adc_options[i].interval_us = OVERSAMPLING_PERIOD_US;
-        adc_options[i].extra_samplings = NUM_SAMPLES_PER_TRIGGER - 1;
+        adc_options[i].extra_samplings = NUM_OVERSAMPLING - 1;
+        adc_options[i].callback = NULL;
 
         adc_sequences[i].buffer = &adc_bufs[i];
-        adc_sequences[i].buffer_size = NUM_SAMPLES_PER_TRIGGER * sizeof(int16_t);
+        adc_sequences[i].buffer_size = NUM_OVERSAMPLING * sizeof(adc_value_t);
         adc_sequences[i].options = &adc_options[i];
 
         if (!device_is_ready(adc_channels[channel_idx].dev))
