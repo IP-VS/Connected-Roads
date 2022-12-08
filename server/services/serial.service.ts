@@ -61,7 +61,7 @@ function initSerial(wsServer: ws.Server) {
 
     serialport.on('data', function (data) {
         console.log('Data:', data.toString('utf8'));
-        var dataStr = data.toString('utf8');
+        var dataStr = data.toString('utf8').trim();
         // Node added
         if (dataStr.indexOf('Added node 0x0') > -1) {
             try {
@@ -103,6 +103,13 @@ function initSerial(wsServer: ws.Server) {
             // Send nodeID to the client
             wsServer.clients.forEach(client => {
                 client.send('device:Press Button');
+            });
+        }
+        // Microphone data
+        else if (RegExp(/^\s*\d*,\d+,\d+/).test(dataStr.replace(/[^0-9,]/g, ''))) {
+            dataStr = dataStr.replace(/[^0-9,]/g, '');
+            wsServer.clients.forEach(client => {
+                client.send('micdata:'+dataStr);
             });
         }
     });
