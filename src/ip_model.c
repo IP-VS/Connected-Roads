@@ -1,5 +1,6 @@
 #include "ip_model.h"
 
+#include "custom_assert.h"
 #include "printk.h"
 #include "provision.h"
 #include <string.h>
@@ -25,7 +26,7 @@ bool samples_serialize(uint8_t* buf, size_t size, const struct Samples* out_samp
 // Simple ring-buffer implementation of a queue.
 static struct Samples samples_send_q[SAMPLES_TO_SEND_QUEUE_LEN];
 // must be locked before every access
-static struct k_mutex samples_send_q_mtx;
+K_MUTEX_DEFINE(samples_send_q_mtx);
 // read&write pointers
 static size_t samples_send_q_rp = 0;
 static size_t samples_send_q_wp = 0;
@@ -36,12 +37,14 @@ bool enqueue_samples_to_send(const struct Samples* samples) {
 
     {
         if ((samples_send_q_wp + 1) % sizeof(samples_send_q) == samples_send_q_rp) {
-            printk("Error: Samples-to-send queue is full\r\n");
+            printk("Error: Samples queue is full\r\n");
             result = false;
             goto end;
         }
+        printk("Enqueueing samples, wp=%u, rp=%u\r\n", samples_send_q_wp, samples_send_q_rp);
         memcpy(&samples_send_q[samples_send_q_wp], samples, sizeof(struct Samples));
         samples_send_q_wp = (samples_send_q_wp + 1) % sizeof(samples_send_q);
+        printk("Enqueued samples, wp=%u, rp=%u\r\n", samples_send_q_wp, samples_send_q_rp);
     }
 
 end:
@@ -55,11 +58,14 @@ bool dequeue_samples_to_send(struct Samples* out_samples) {
 
     {
         if (samples_send_q_rp == samples_send_q_wp) {
+            printk("Error: Samples queue is empty\r\n");
             result = false;
             goto end;
         }
+        printk("Dequeueing samples, wp=%u, rp=%u\r\n", samples_send_q_wp, samples_send_q_rp);
         memcpy(out_samples, &samples_send_q[samples_send_q_rp], sizeof(struct Samples));
         samples_send_q_rp = (samples_send_q_rp + 1) % sizeof(samples_send_q);
+        printk("Dequeued samples, wp=%u, rp=%u\r\n", samples_send_q_wp, samples_send_q_rp);
     }
 
 end:
@@ -115,10 +121,16 @@ bool send_micdata_from_queue(uint16_t addr) {
         return false;
     }
 
+    struct bt_mesh_model* model = get_msg_model();
+    if (!model) {
+        printk("Error: Message model is NULL\r\n");
+        return false;
+    }
+
     // TODO: do for all addresses, not just one.
     struct bt_mesh_msg_ctx ctx = {
         .addr = addr,
-        .app_idx = get_msg_model()->keys[0],
+        .app_idx = model->keys[0],
         .send_ttl = BT_MESH_TTL_DEFAULT,
         .send_rel = true,
     };
@@ -132,6 +144,6 @@ bool send_micdata_from_queue(uint16_t addr) {
     }
     buf.len = SAMPLES_SERIALIZE_BUFFER_SIZE;
 
-    printk("Sending MICDATA message to 0x%04x with app_idx 0x%04x\r\n", addr, get_msg_model()->keys[0]);
+    printk("Sending MICDATA message to 0x%04x with app_idx 0x%04x\r\n", addr, model->keys[0]);
     return bt_mesh_model_send(model, &ctx, &buf, &send_cb, (void*)addr);
 }

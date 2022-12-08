@@ -15,12 +15,9 @@
 #include "ip_model.h"
 #include "provision.h"
 
-BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
-    "Console device is not ACM CDC UART device");
-
 void main(void) {
     /* uart */
-    uart_init(dev);
+    uart_init();
 
     printk("Startup\r\n");
 
@@ -53,10 +50,18 @@ void main(void) {
         }
     }
     printk("Ready to do work!\r\n");
+    struct Samples samples;
+    memset(&samples, 0, sizeof(samples));
+    uint16_t addr = 0;
     while (1) {
+        if (!enqueue_samples_to_send(&samples)) {
+            printk("Enqueueing samples failed\r\n");
+        }
         // TODO: Adjust address here if you want to test
-        if (!send_micdata_from_queue(0x01)) {
+        /*if (!send_micdata_from_queue(addr)) {
+            printk("Failed send micdata\r\n");
             k_sleep(K_SECONDS(1));
         }
+        addr = (addr + 1) % 4;*/
     }
 }
