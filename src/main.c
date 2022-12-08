@@ -45,13 +45,15 @@ void main(void) {
 
     printk("Main reached end :)\r\n");
 
-    while (1) {
-        k_sleep(K_SECONDS(1));
-        if (bt_mesh_is_provisioned()) {
-            printk("Node is provisioned!\r\n");
-            break;
-        }
-    }
+    // while (1) {
+    //     k_sleep(K_SECONDS(1));
+    //     if (bt_mesh_is_provisioned()) {
+    //         printk("Node is provisioned!\r\n");
+    //         break;
+    //     }
+    // }
+    printk("Skipped provisioning\n");
+
     printk("Ready to do work!\r\n");
     while (1) {
         // TODO: Adjust address here if you want to test
