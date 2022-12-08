@@ -21,7 +21,23 @@ static int16_t adc_bufs[NUM_CHANNELS][NUM_SAMPLES_PER_TRIGGER];
 static struct adc_sequence_options adc_options[NUM_CHANNELS];
 static struct adc_sequence adc_sequences[NUM_CHANNELS];
 
-int init_adc()
+struct k_timer adc_timer;
+
+static void adc_work_handler(struct k_work *work)
+{
+    // TODO
+}
+
+K_WORK_DEFINE(adc_work, adc_work_handler);
+
+static void adc_timer_handler(struct k_timer *dummy)
+{
+    k_work_submit(&adc_work);
+}
+
+K_TIMER_DEFINE(adc_timer, adc_timer_handler, NULL);
+
+int start_adc_sampling()
 {
     int err;
     for (size_t i = 0; i < NUM_CHANNELS; i++)
@@ -48,6 +64,9 @@ int init_adc()
             return -2;
         }
     }
+
+    k_timer_init(&adc_timer, adc_timer_handler, NULL);
+    k_timer_start(&adc_timer, K_SECONDS(0), K_MSEC(SAMPLING_PERIOD_MS));
 
     return 0;
 }

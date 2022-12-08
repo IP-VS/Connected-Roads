@@ -57,7 +57,7 @@ void main(void) {
 
     printk("Ready to do work!\r\n");
 
-    err = init_adc();
+    err = start_adc_sampling();
     if (err) {
         printk("ADC initialization failed (%d)\n", err);
         return;
@@ -65,8 +65,11 @@ void main(void) {
 
     while (1) {
         // TODO: Adjust address here if you want to test
-        if (!send_micdata_from_queue(0x01)) {
-            k_sleep(K_SECONDS(1));
+        // if (!send_micdata_from_queue(0x01)) {
+        //     k_sleep(K_SECONDS(1));
+        //     printk("Fake work\n");
+        // }
+        k_sleep(K_SECONDS(1));
         }
     }
 }
