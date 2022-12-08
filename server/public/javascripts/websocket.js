@@ -1,43 +1,14 @@
 // Create WebSocket connection.
-var wsUrl = 'ws://localhost:8080';
+var wsUrl = 'ws://localhost:5327';
 
 var socket;
 var connected = false;
-var connectWS = function () {
-    var interval = setInterval(() => {
-        console.log('Connecting...');
-        if (connected) {
-            console.log('Connected.');
-            clearInterval(interval);
-        } else {
-            // Create WebSocket connection.
-            socket = new WebSocket(wsUrl);
-            socketListener();
-        }
-    }, 1000);
-}
-connectWS();
-
-var rmNode = function (node) {
-    console.log('Remove node: ', node);
-    socket.send('rmNode:' + node);
-}
-
-var log = function(msg) {
-    // Append log to output
-    if (msg.length > 2) {
-        var msgElement = document.createElement('p');
-        msgElement.id = msg.split(':')[0];
-        msgElement.innerHTML = msg;
-        document.getElementById('output').appendChild(msgElement);
-        // Scroll to bottom
-        document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
-    }
-}
+var interval;
 
 var socketListener = function () {
     // Connection opened
     socket.addEventListener('open', (event) => {
+        clearInterval(interval);
         log('Connection opened');
         connected = true;
         socket.send('INIT');
@@ -50,7 +21,12 @@ var socketListener = function () {
         connected = false;
         socket = null;
         // Try to reconnect
-        connectWS();
+        try {
+            clearInterval(interval);
+        } catch (e) {
+            // Do nothing
+        }
+        interval = setInterval(connectWS, 1000);
     });
 
     // Listen for messages
@@ -105,4 +81,34 @@ var socketListener = function () {
             // Do nothing
         }
     });
+}
+
+var connectWS = function () {
+    console.log('Connecting...');
+    if (connected) {
+        console.log('Connected.');
+        clearInterval(interval);
+    } else {
+        // Create WebSocket connection.
+        socket = new WebSocket(wsUrl);
+        socketListener();
+    }
+}
+connectWS();
+
+var rmNode = function (node) {
+    console.log('Remove node: ', node);
+    socket.send('rmNode:' + node);
+}
+
+var log = function(msg) {
+    // Append log to output
+    if (msg.length > 2) {
+        var msgElement = document.createElement('p');
+        msgElement.id = msg.split(':')[0];
+        msgElement.innerHTML = msg;
+        document.getElementById('output').appendChild(msgElement);
+        // Scroll to bottom
+        document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
+    }
 }
