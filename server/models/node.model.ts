@@ -23,6 +23,9 @@ class NodeList {
     static addNode(node: MeshNode) {
         this.nodes.push(node);
     }
+    static clear() {
+        this.nodes = [];
+    }
     static removeNode(id: number) {
         var index = this.nodes.findIndex(n => n.id == id);
         if (index > -1) {

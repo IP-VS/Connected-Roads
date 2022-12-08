@@ -30,6 +30,7 @@ function initSerial(wsServer: ws.Server) {
             client.send('device:Disconnected');
         });
         connected = false;
+        NodeList.clear();
     });
 
     // On open
