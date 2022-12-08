@@ -14,6 +14,7 @@
 
 #include "ip_model.h"
 #include "provision.h"
+#include "microphone.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
     "Console device is not ACM CDC UART device");
@@ -55,6 +56,13 @@ void main(void) {
     printk("Skipped provisioning\n");
 
     printk("Ready to do work!\r\n");
+
+    err = init_adc();
+    if (err) {
+        printk("ADC initialization failed (%d)\n", err);
+        return;
+    }
+
     while (1) {
         // TODO: Adjust address here if you want to test
         if (!send_micdata_from_queue(0x01)) {

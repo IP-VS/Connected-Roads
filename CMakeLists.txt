@@ -10,5 +10,6 @@ target_sources(app PRIVATE
     src/main.c
     src/provision.c
     src/uart.c
-    src/ip_model.c)
+    src/ip_model.c
+    src/microphone.c)
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/includes)
