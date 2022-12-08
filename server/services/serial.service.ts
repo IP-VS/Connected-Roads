@@ -91,8 +91,14 @@ function initSerial(wsServer: ws.Server) {
                 console.log(e);
             }
         }
+        // Press button for being a provisioner
+        else if (dataStr.indexOf('Press Button') > -1) {
+            wsServer.clients.forEach(client => {
+                client.send('device:Press Button');
+            });
+        }
         // New device found
-        if (dataStr.indexOf('detected') > -1) {
+        else if (dataStr.indexOf('detected') > -1) {
             // Send nodeID to the client
             wsServer.clients.forEach(client => {
                 client.send('device:Press Button');
