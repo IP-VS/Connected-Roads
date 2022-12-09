@@ -114,7 +114,9 @@ int send_message(struct bt_mesh_model* model, uint16_t addr) {
 
     printk("Sending MICDATA message to 0x%04x\r\n", addr);
 
-    buf.data = "hello";
+    const char mem[] = "hello";
+
+    net_buf_simple_add_mem(&buf, mem, sizeof(mem));
 
     return bt_mesh_model_send(model, &ctx, &buf, &send_cb, (void*)addr);
 }
