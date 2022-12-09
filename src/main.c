@@ -50,18 +50,13 @@ void main(void) {
         }
     }
     printk("Ready to do work!\r\n");
-    struct Samples samples;
-    memset(&samples, 0, sizeof(samples));
-    uint16_t addr = 0;
     while (1) {
-        if (!enqueue_samples_to_send(&samples)) {
-            printk("Enqueueing samples failed\r\n");
+        for (uint16_t i = 0; i < 4; ++i) {
+            int err = send_message(get_msg_model(), i);
+            if (err) {
+                printk("Failed to send message: %d\r\n", err);
+            }
         }
-        // TODO: Adjust address here if you want to test
-        /*if (!send_micdata_from_queue(addr)) {
-            printk("Failed send micdata\r\n");
-            k_sleep(K_SECONDS(1));
-        }
-        addr = (addr + 1) % 4;*/
+        k_sleep(K_SECONDS(1));
     }
 }
