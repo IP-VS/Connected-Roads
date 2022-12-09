@@ -21,10 +21,10 @@ bool enqueue_samples_to_send(const struct Samples* samples);
 // Dequeues the samples to be send. Returns `false` if the queue is empty.
 bool dequeue_samples_to_send(struct Samples* out_samples);
 
-#define COMPANY_ID 0xcafe
+#define COMPANY_ID CONFIG_BT_COMPANY_ID
 #define MODEL_ID 0xdad0
 
-#define MESSAGE_MICDATA_OPCODE BT_MESH_MODEL_OP_3(0x01, COMPANY_ID)
+#define MESSAGE_MICDATA_OPCODE BT_MESH_MODEL_OP_3(0x01, CONFIG_BT_COMPANY_ID)
 
 #define MESSAGE_MICDATA_LEN SAMPLES_SERIALIZE_BUFFER_SIZE
 

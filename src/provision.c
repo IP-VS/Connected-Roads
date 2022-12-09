@@ -54,7 +54,7 @@ static struct bt_mesh_model root_models[]
       };
 
 static struct bt_mesh_model vnd_models[] = {
-    BT_MESH_MODEL_VND_CB(COMPANY_ID, MODEL_ID, _opcode_list, NULL, NULL, &model_cbs),
+    BT_MESH_MODEL_VND_CB(CONFIG_BT_COMPANY_ID, MODEL_ID, _opcode_list, NULL, NULL, &model_cbs),
 };
 
 static struct bt_mesh_elem elements[]
@@ -63,7 +63,7 @@ static struct bt_mesh_elem elements[]
       };
 
 static const struct bt_mesh_comp comp = {
-    .cid = BT_COMP_ID_LF,
+    .cid = CONFIG_BT_COMPANY_ID,
     .elem = elements,
     .elem_count = ARRAY_SIZE(elements),
 };
