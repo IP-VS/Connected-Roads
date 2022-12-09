@@ -10,6 +10,8 @@ bool samples_deserialize(const uint8_t* buf, size_t size, struct Samples* out_sa
         printk("samples_deserialize: buffer too small to hold samples\r\n");
         return false;
     }
+    assert_not_null(buf);
+    assert_not_null(out_samples);
     memcpy(out_samples, buf, sizeof(struct Samples));
     return true;
 }
@@ -19,6 +21,8 @@ bool samples_serialize(uint8_t* buf, size_t size, const struct Samples* out_samp
         printk("samples_serialize: buffer too small to hold samples\r\n");
         return false;
     }
+    assert_not_null(buf);
+    assert_not_null(out_samples);
     memcpy(buf, out_samples, sizeof(struct Samples));
     return true;
 }
@@ -34,6 +38,8 @@ static size_t samples_send_q_wp = 0;
 bool enqueue_samples_to_send(const struct Samples* samples) {
     bool result = true;
     k_mutex_lock(&samples_send_q_mtx, K_FOREVER);
+
+    assert_not_null(samples);
 
     {
         if ((samples_send_q_wp + 1) % sizeof(samples_send_q) == samples_send_q_rp) {
@@ -55,6 +61,8 @@ end:
 bool dequeue_samples_to_send(struct Samples* out_samples) {
     bool result = true;
     k_mutex_lock(&samples_send_q_mtx, K_FOREVER);
+
+    assert_not_null(out_samples);
 
     {
         if (samples_send_q_rp == samples_send_q_wp) {
