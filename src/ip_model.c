@@ -97,16 +97,12 @@ static struct bt_mesh_send_cb send_cb = {
 int handle_message_micdata(struct bt_mesh_model* model, struct bt_mesh_msg_ctx* ctx, struct net_buf_simple* buf) {
     // Message handler code
     printk("Got MICDATA message\r\n");
-    struct Samples samples;
-    if (samples_deserialize(buf->data, buf->len, &samples)) {
-        // samples is VALID here, use it :)
-        // TODO: do something with the samples
-    }
     return 0;
 }
 
 int send_message(struct bt_mesh_model* model, uint16_t addr) {
     struct bt_mesh_msg_ctx ctx = {
+        .net_idx = 0,
         .addr = addr,
         .app_idx = model->keys[0],
         .send_ttl = BT_MESH_TTL_DEFAULT,
