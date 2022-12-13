@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PRINTK_H
+#define PRINTK_H
 
 /*
  * Overrides "printk()" by #define-ing it to instead call
@@ -41,3 +42,5 @@ static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
         printk_raw("%s:%d: ", __FILE__, __LINE__); \
         printk_raw(__VA_ARGS__);                   \
     } while (false)
+
+#endif // PRINTK_H

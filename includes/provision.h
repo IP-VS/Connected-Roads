@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef PROVISION_H
+#define PROVISION_H
 #include <assert.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -44,3 +46,4 @@ void provision(void);
 int run_bt_node(void);
 
 void dev_uuid_init();
+#endif /* PROVISION_H */

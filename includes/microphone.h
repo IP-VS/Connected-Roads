@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MICROPHONE_H
+#define MICROPHONE_H
 
 /*
  * Temporary microphone API for raw data to see in webserver
@@ -29,3 +30,5 @@ void adc_work_handler(struct k_work *work);
 void adc_timer_handler(struct k_timer *dummy);
 
 void microphone_init(void);
+
+#endif /* MICROPHONE_H */

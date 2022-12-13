@@ -1,5 +1,5 @@
-#ifndef heartbeat_h
-#define heartbeat_h
+#ifndef HEARTBEAT_H
+#define HEARTBEAT_H
 
 /**
  * hearbeat client
