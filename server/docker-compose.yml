@@ -1,0 +1,15 @@
+version: '3'
+services:
+  server:
+    build: .                      # adjust accordingly
+    restart: unless-stopped
+    volumes:
+      - ".env:/app/.env"          # adjust accordingly
+    ports:
+      - "80:3000"                 # adjust accordingly
+      - "5327:5327"               # do not change. used for websockets
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0 # does not work natively on docker for windows
+                                  # but works on docker for linux
+                                  # you can try using https://github.com/dorssel/usbipd-win
+                                  # for windows
