@@ -34,7 +34,7 @@ static struct {
 	uint16_t src;
 	uint32_t transition_time;
 	struct k_work_delayable work;
-} onoff;
+} msg;
 
 /* OnOff messages' transition time and remaining time fields are encoded as an
  * 8 bit value with a 6 bit step field and a 2 bit resolution field.
@@ -82,7 +82,7 @@ static inline uint8_t model_time_encode(int32_t ms)
 	return 0x3f;
 }
 
-static int onoff_status_send(struct bt_mesh_model *model,
+static int msg_status_send(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx)
 {
 	uint32_t remaining;
@@ -91,28 +91,28 @@ static int onoff_status_send(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
 
 	remaining = k_ticks_to_ms_floor32(
-			    k_work_delayable_remaining_get(&onoff.work)) +
-		    onoff.transition_time;
+			    k_work_delayable_remaining_get(&msg.work)) +
+		    msg.transition_time;
 
 	/* Check using remaining time instead of "work pending" to make the
-	 * onoff status send the right value on instant transitions. As the
+	 * msg status send the right value on instant transitions. As the
 	 * work item is executed in a lower priority than the mesh message
 	 * handler, the work will be pending even on instant transitions.
 	 */
 	if (remaining) {
-		net_buf_simple_add_u8(&buf, !onoff.val);
-		net_buf_simple_add_u8(&buf, onoff.val);
+		net_buf_simple_add_u8(&buf, !msg.val);
+		net_buf_simple_add_u8(&buf, msg.val);
 		net_buf_simple_add_u8(&buf, model_time_encode(remaining));
 	} else {
-		net_buf_simple_add_u8(&buf, onoff.val);
+		net_buf_simple_add_u8(&buf, msg.val);
 	}
 
 	return bt_mesh_model_send(model, ctx, &buf, NULL, NULL);
 }
 
-static void onoff_timeout(struct k_work *work)
+static void msg_timeout(struct k_work *work)
 {
-	if (onoff.transition_time) {
+	if (msg.transition_time) {
 		/* Start transition.
 		 *
 		 * The LED should be on as long as the transition is in
@@ -121,25 +121,25 @@ static void onoff_timeout(struct k_work *work)
 		 */
 		board_led_set(true);
 
-		k_work_reschedule(&onoff.work, K_MSEC(onoff.transition_time));
-		onoff.transition_time = 0;
+		k_work_reschedule(&msg.work, K_MSEC(msg.transition_time));
+		msg.transition_time = 0;
 		return;
 	}
 
-	board_led_set(onoff.val);
+	board_led_set(msg.val);
 }
 
 /* Generic OnOff Server message handlers */
 
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_msg_get(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	onoff_status_send(model, ctx);
+	msg_status_send(model, ctx);
 	return 0;
 }
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_msg_set_unack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -156,51 +156,51 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	/* Only perform change if the message wasn't a duplicate and the
 	 * value is different.
 	 */
-	if (tid == onoff.tid && ctx->addr == onoff.src) {
+	if (tid == msg.tid && ctx->addr == msg.src) {
 		/* Duplicate */
 		return 0;
 	}
 
-	if (val == onoff.val) {
+	if (val == msg.val) {
 		/* No change */
 		return 0;
 	}
 
 	printk("Message received: %s", msg_str[val]);
 
-	onoff.tid = tid;
-	onoff.src = ctx->addr;
-	onoff.val = val;
-	onoff.transition_time = trans;
+	msg.tid = tid;
+	msg.src = ctx->addr;
+	msg.val = val;
+	msg.transition_time = trans;
 
 	/* Schedule the next action to happen on the delay, and keep
 	 * transition time stored, so it can be applied in the timeout.
 	 */
-	k_work_reschedule(&onoff.work, K_MSEC(delay));
+	k_work_reschedule(&msg.work, K_MSEC(delay));
 
 	return 0;
 }
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_msg_set(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	(void)gen_onoff_set_unack(model, ctx, buf);
-	onoff_status_send(model, ctx);
+	(void)gen_msg_set_unack(model, ctx, buf);
+	msg_status_send(model, ctx);
 
 	return 0;
 }
 
-static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
-	{ OP_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_onoff_get },
-	{ OP_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_onoff_set },
-	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_onoff_set_unack },
+static const struct bt_mesh_model_op gen_msg_srv_op[] = {
+	{ OP_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_msg_get },
+	{ OP_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_msg_set },
+	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_msg_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Generic OnOff Client */
 
-static int gen_onoff_status(struct bt_mesh_model *model,
+static int gen_msg_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -221,8 +221,8 @@ static int gen_onoff_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
-	{OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_onoff_status},
+static const struct bt_mesh_model_op gen_msg_cli_op[] = {
+	{OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_msg_status},
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -230,9 +230,9 @@ static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, NULL,
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_msg_srv_op, NULL,
 		      NULL),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, NULL,
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_msg_cli_op, NULL,
 		      NULL),
 };
 
@@ -279,7 +279,7 @@ static const struct bt_mesh_prov prov = {
 };
 
 /** Send an OnOff Set message from the Generic OnOff Client to all nodes. */
-static int gen_onoff_send(bool val)
+static int gen_msg_send(bool val)
 {
 	struct bt_mesh_msg_ctx ctx = {
 		.app_idx = models[3].keys[0], /* Use the bound key */
@@ -307,7 +307,7 @@ static int gen_onoff_send(bool val)
 static void button_pressed(struct k_work *work)
 {
 	if (bt_mesh_is_provisioned()) {
-		(void)gen_onoff_send(!onoff.val);
+		(void)gen_msg_send(!msg.val);
 		return;
 	}
 
@@ -402,7 +402,7 @@ void msgdata_init(void)
 		return;
 	}
 
-	k_work_init_delayable(&onoff.work, onoff_timeout);
+	k_work_init_delayable(&msg.work, msg_timeout);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
