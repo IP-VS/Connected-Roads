@@ -104,7 +104,7 @@ RUN if [ ! -z "$NCLT_URL" ]; then \
         cd .. && rm -rf tmp ; \
     else \
         echo "Skipping nRF Command Line Tools (not available for $arch)" ; \
-    fi && \
+    fi
 
     #
     # Zephyr Toolchain
