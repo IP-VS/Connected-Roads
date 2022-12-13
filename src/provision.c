@@ -312,6 +312,29 @@ void button_pressed(const struct device* dev, struct gpio_callback* cb, uint32_t
     assert_equal(k_sem_count_get(&sem_button_pressed), 0);
     k_sem_give(&sem_button_pressed);
 }
+
+// Reset the button by removing the interrupt callback and deinitializing the pin
+void button_reset(void) {
+    int ret;
+
+    assert_not_null(button.port);
+
+    gpio_remove_callback(button.port, &button_cb_data);
+    ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_DISABLE);
+    if (ret != 0) {
+        printk("Error %d: failed to disable interrupt on %s pin %d\r\n", ret,
+            button.port->name, button.pin);
+        return;
+    }
+    ret = gpio_pin_configure_dt(&button, GPIO_DISCONNECTED);
+    if (ret != 0) {
+        printk("Error %d: failed to disconnect %s pin %d\r\n", ret, button.port->name,
+            button.pin);
+        return;
+    }
+    printk("Button reset\r\n");
+}
+
 void button_init(void) {
     int ret;
 
@@ -338,10 +361,14 @@ void button_init(void) {
     printk("Buttons are ready!\r\n");
 }
 bool wait_for_button_press(int timeout_s) {
+    // Init button
+    button_init();
     k_sem_reset(&sem_button_pressed);
     int err = k_sem_take(&sem_button_pressed, K_SECONDS(timeout_s));
     if (err == -EAGAIN) {
         printk("Timed out, button 1 wasn't pressed in time.\r\n");
+        // Reset button
+        button_reset();
         return false;
     }
     printk("Button 1 was pressed!\r\n");
