@@ -10,8 +10,15 @@ static uint8_t dev_uuid[16];
 static uint8_t node_uuid[16];
 
 void dev_uuid_init() {
-    // hwinfo_get_device_id(dev_uuid, 16);
-    bt_rand(dev_uuid, 16);
+    int err = 0;
+	if (IS_ENABLED(CONFIG_HWINFO)) {
+		err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
+	}
+
+	if (err < 0) {
+		dev_uuid[0] = 0xdd;
+		dev_uuid[1] = 0xdd;
+	}
 }
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
