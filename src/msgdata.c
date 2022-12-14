@@ -147,9 +147,7 @@ static int gen_msg_set_unack(struct bt_mesh_model *model,
 {
     // First 16 bits set the msg length
 	uint16_t len = net_buf_simple_pull_le16(buf);
-	
-	// Pull chars as 8bits from net buffer
-	char msg_str[len + 1] = malloc(len + 1);
+	char msg_str[len + 1]; // Why does this work? o.o
     for (uint16_t i = 0; i < len; i++) {
         char c = net_buf_simple_pull_u8(buf);
    		msg_str[i] = c;
