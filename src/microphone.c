@@ -1,9 +1,11 @@
 #include "microphone.h"
+#include "ip_model.h"
 #include "printk.h"
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/kernel.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(zephyr_user)) && DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels),
              "No suitable device for ADC");
@@ -21,26 +23,81 @@ static adc_value_t adc_bufs[NUM_CHANNELS][NUM_OVERSAMPLING];
 static struct adc_sequence_options adc_options[NUM_CHANNELS];
 static struct adc_sequence adc_sequences[NUM_CHANNELS];
 
+static struct Samples sample_bufs[NUM_SAMPLE_BUFFERS];
+static size_t current_sample_buf = 0;
+static size_t previous_sample_buf = -1;
+
 struct k_timer adc_timer;
+
+static int32_t postproc_first(adc_value_t *buf)
+{
+    return buf[0];
+}
+
+static int32_t postproc_sum(adc_value_t *buf)
+{
+    int32_t sum = 0;
+    for (size_t i = 0; i < NUM_OVERSAMPLING; i++)
+    {
+        sum += buf[i];
+    }
+    return sum;
+}
 
 static void adc_work_handler(struct k_work *work)
 {
-    int err;
+    struct Samples *samples = &sample_bufs[current_sample_buf];
+
+    if (previous_sample_buf != current_sample_buf && samples->n_samples != 0)
+    {
+        // message has not been sent yet
+        return;
+    }
+
+    previous_sample_buf = current_sample_buf;
+
+    int err = 0;
+    int64_t time = k_uptime_get();
+
     for (size_t i = 0; i < NUM_CHANNELS; i++)
     {
         size_t channel_idx = adc_channel_idxs[i];
-        (void) adc_sequence_init_dt(&adc_channels[channel_idx], &adc_sequences[i]);
-        err = adc_read(adc_channels[channel_idx].dev, &adc_sequences[i]);
+        (void)adc_sequence_init_dt(&adc_channels[channel_idx], &adc_sequences[i]);
 
-        // if (err < 0) {
-        //     printk("adc error (%d) channel %d\n", err, i);
-        //     continue;
-        // }
+        // a measurement has failed when sampling on any channel failed
+        err = err != 0 ? err : adc_read(adc_channels[channel_idx].dev, &adc_sequences[i]);
 
-        printk("channel %d: ", i);
-        for (size_t k = 0; k < NUM_OVERSAMPLING; k++)
+        samples->samples[samples->n_samples].channels[i] = postproc_first(adc_bufs[i]);
+    }
+
+    if (err == 0)
+    {
+        samples->samples[samples->n_samples].time = time;
+        samples->n_samples++;
+    }
+    else
+    {
+        printk("adc error (%d)\n", err);
+        return;
+    }
+
+    if (samples->n_samples >= NUM_SAMPLES)
+    {
+        enqueue_samples_to_send(samples);
+
+        if (!enqueue_samples_to_send(samples))
         {
-            printk("%d,", adc_bufs[i][k]);
+            printk("failed to enqueue samples\n");
+            // reuse same buffer
+            samples->n_samples = 0;
+        }
+        else
+        {
+            current_sample_buf++;
+            if (current_sample_buf >= NUM_SAMPLE_BUFFERS)
+            {
+                current_sample_buf = 0;
+            }
         }
     }
 }
@@ -57,6 +114,12 @@ K_TIMER_DEFINE(adc_timer, adc_timer_handler, NULL);
 int start_adc_sampling()
 {
     int err;
+
+    for (size_t i = 0; i < NUM_SAMPLE_BUFFERS; i++)
+    {
+        sample_bufs[i].n_samples = 0;
+    }
+
     for (size_t i = 0; i < NUM_CHANNELS; i++)
     {
         size_t channel_idx = adc_channel_idxs[i];
