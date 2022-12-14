@@ -20,7 +20,7 @@
 
 #include "uart.h"
 
-static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+/*
 
 // check for VLA support
 #ifdef __STDC_NO_VLA__
@@ -41,3 +41,5 @@ static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
         printk_raw("%s:%d: ", __FILE__, __LINE__); \
         printk_raw(__VA_ARGS__);                   \
     } while (false)
+
+*/

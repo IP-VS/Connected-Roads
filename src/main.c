@@ -16,12 +16,9 @@
 #include "provision.h"
 #include "microphone.h"
 
-BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
-    "Console device is not ACM CDC UART device");
-
 void main(void) {
     /* uart */
-    uart_init(dev);
+    uart_init();
 
     printk("Startup\r\n");
 
@@ -64,11 +61,6 @@ void main(void) {
     }
 
     while (1) {
-        // TODO: Adjust address here if you want to test
-        // if (!send_micdata_from_queue(0x01)) {
-        //     k_sleep(K_SECONDS(1));
-        //     printk("Fake work\n");
-        // }
         k_sleep(K_SECONDS(1));
     }
 }
