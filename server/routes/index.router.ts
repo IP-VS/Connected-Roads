@@ -29,7 +29,7 @@ wsServer.on('connection', socket => {
         socket.send('device:Disconnected');
       }
     } else if (message.toString('utf8').indexOf('rmNode') > -1) {
-      var nodeId = parseInt(message.toString('utf8').split('rmNode:')[1]);
+      var nodeId = message.toString('utf8').split('rmNode:')[1];
       if (NodeList.removeNode(nodeId)) {
         serialport.write(nodeId + '\r\n');
         socket.send(NodeList.toString());

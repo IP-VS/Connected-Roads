@@ -1,8 +1,10 @@
 class MeshNode {
-    id: number;
+    id: string;
     name: string;
     status: string;
-    constructor(id: number, name: string, status: string) {
+    timer: any;
+
+    constructor(id: string, name: string, status: string) {
         this.id = id;
         this.name = name;
         this.status = status;
@@ -26,7 +28,7 @@ class NodeList {
     static clear() {
         this.nodes = [];
     }
-    static removeNode(id: number) {
+    static removeNode(id: string) {
         var index = this.nodes.findIndex(n => n.id == id);
         if (index > -1) {
             this.nodes.splice(index, 1);
@@ -34,11 +36,26 @@ class NodeList {
         }
         return false;
     }
-    static getNode(id: number) {
+    static getNode(id: string) {
         return this.nodes.find(n => n.id == id);
     }
     static toString() {
-        return JSON.stringify(this.nodes);
+        // Generate JSON for each node but without the timer
+        var nodes = this.nodes.map(n => {
+            var node = new MeshNode(n.id, n.name, n.status);
+            return node;
+        });
+        // Order by name
+        nodes.sort((a, b) => {
+            if (a.name < b.name) {
+                return -1;
+            }
+            if (a.name > b.name) {
+                return 1;
+            }
+            return 0;
+        });
+        return JSON.stringify(nodes);
     }
     static fromJson(json: string) {
         var obj = JSON.parse(json);

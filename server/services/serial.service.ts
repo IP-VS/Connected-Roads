@@ -63,27 +63,46 @@ function initSerial(wsServer: ws.Server) {
         console.log('Data:', data.toString('utf8'));
         var dataStr = data.toString('utf8').trim();
         // Node added
-        if (dataStr.indexOf('Added node 0x0') > -1) {
+        if (dataStr.indexOf('alive:UUID:') > -1) {
             try {
                 // Set device status
                 wsServer.clients.forEach(client => {
                     client.send('device:Connected');
                 });
                 // Get Node name
-                var nodeName = dataStr.split('Added node 0x0')[1];
-                var temp = nodeName.split('0x0')[1];
-                if (temp != undefined) {
-                    nodeName = temp;
+                var nodeName = dataStr.split('alive:UUID:')[1].split(', ')[0];
+
+                // Remove other chars
+                nodeName = nodeName.replace(/[^0-9a-z]/g, '');
+                if (nodeName.length != 4) {
+                    return;
                 }
-                // Remove non ascii numbers
-                nodeName = nodeName.replace(/[^0-9]/g, '');
-                // Create new node
-                var newNode = new MeshNode(
-                    parseInt(nodeName),
-                    nodeName,
-                    '🟢'
-                );
-                NodeList.addNode(newNode);
+                let node = NodeList.getNode(nodeName);
+                if (node) {
+                    node.status = '🟢';
+                    try {
+                        clearTimeout(node.timer);
+                    } catch (e) {
+                        // Do nothing
+                    }
+                } else {
+                    // Create new node
+                    node = new MeshNode(
+                        nodeName,
+                        nodeName,
+                        '🟢'
+                    );
+                }
+                // Start timeout for node status
+                node.timer = setTimeout(() => {
+                    node!.status = '🔴';
+                    // Send nodelist to client
+                    wsServer.clients.forEach((client: any) => {
+                        client.send(NodeList.toString());
+                    });
+                }, 5000);
+
+                NodeList.addNode(node);
                 // Send nodeID to the client
                 wsServer.clients.forEach(client => {
                     client.send(NodeList.toString());
@@ -109,7 +128,7 @@ function initSerial(wsServer: ws.Server) {
         else if (RegExp(/^\s*\d*,\d+,\d+/).test(dataStr.replace(/[^0-9,]/g, ''))) {
             dataStr = dataStr.replace(/[^0-9,]/g, '');
             wsServer.clients.forEach(client => {
-                client.send('micdata:'+dataStr);
+                client.send('micdata:' + dataStr);
             });
         }
     });
