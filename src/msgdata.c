@@ -26,8 +26,6 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-static const char *const msg_str__[] = { "off", "on" };
-
 static struct {
 	char* val;
     uint16_t len;
@@ -297,7 +295,7 @@ static const struct bt_mesh_prov prov = {
 };
 
 // Send a message Generic Client to all nodes.
-static int gen_msg_send(char* msg_str)
+int gen_msg_send(char* msg_str)
 {
 	struct bt_mesh_msg_ctx ctx = {
 		.app_idx = models[3].keys[0], /* Use the bound key */

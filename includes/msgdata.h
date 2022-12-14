@@ -32,7 +32,7 @@ static int gen_msg_status(struct bt_mesh_model *model,
 static int output_number(bt_mesh_output_action_t action, uint32_t number);
 
 /** Broadcasts a string to the mesh */
-static int gen_msg_send(char* val);
+int gen_msg_send(char* val);
 
 static uint8_t dev_uuid[16];
 void msgdata_init(void);

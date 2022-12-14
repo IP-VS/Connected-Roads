@@ -12,6 +12,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/zephyr.h>
 
+#include "heartbeat.h"
 #include "provision.h"
 #include "microphone.h"
 #include "msgdata.h"
@@ -23,20 +24,21 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 void main(void) {
     /* uart */
     uart_init(dev);
+    dev_uuid_init();
 
     printk("Startup \r\n");
 
     int err;
 
-    dev_uuid_init();
 
     printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
     if (wait_for_button_press(5)) {
         provision();
         printk("Done provisioning\r\n");
     } else {
-        // run_bt_node();
         msgdata_init();
+        // Heartbeat init AFTER msgdata init
+        heartbeat_init(5);
     }
 
     printk("Main reached end :)\r\n");
