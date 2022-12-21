@@ -39,11 +39,12 @@ void button_pressed(const struct device* dev, struct gpio_callback* cb, uint32_t
 
 void button_init(void);
 
-bool wait_for_button_press(int timeout_s);
+bool wait_for_button_press(unsigned timeout_s);
 
 void provision(void);
 
 int run_bt_node(void);
 
-void dev_uuid_init();
+void dev_uuid_init(void);
+
 #endif /* PROVISION_H */

@@ -151,8 +151,9 @@ void configure_node(struct bt_mesh_cdb_node* node) {
     struct bt_mesh_comp_p0_elem elem;
     struct bt_mesh_cdb_app_key* key;
     struct bt_mesh_comp_p0 comp;
-    uint8_t status;
-    int err, elem_addr;
+    uint8_t status = 0;
+    int err = 0;
+    uint16_t elem_addr = 0;
 
     assert_not_null(node);
 
@@ -360,7 +361,7 @@ void button_init(void) {
     gpio_add_callback(button.port, &button_cb_data);
     printk("Buttons are ready!\r\n");
 }
-bool wait_for_button_press(int timeout_s) {
+bool wait_for_button_press(unsigned timeout_s) {
     // Init button
     button_init();
     k_sem_reset(&sem_button_pressed);
