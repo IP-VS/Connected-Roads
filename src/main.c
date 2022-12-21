@@ -12,11 +12,11 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/zephyr.h>
 
+#include "board.h"
 #include "heartbeat.h"
-#include "provision.h"
 #include "microphone.h"
 #include "msgdata.h"
-#include "board.h"
+#include "provision.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
     "Console device is not ACM CDC UART device");
