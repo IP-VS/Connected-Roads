@@ -1,8 +1,10 @@
 #include "msgdata.h"
+#include "net/buf.h"
+#include <stdint.h>
 
 #define OP_ONOFF_GET BT_MESH_MODEL_OP_2(0x82, 0x01)
 #define OP_ONOFF_SET BT_MESH_MODEL_OP_2(0x82, 0x02)
-#define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
+#define OP_GENERIC_MSG BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define OP_ONOFF_STATUS BT_MESH_MODEL_OP_2(0x82, 0x04)
 
 static void attention_on(struct bt_mesh_model* mod) {
@@ -132,59 +134,26 @@ static int gen_msg_get(struct bt_mesh_model* model,
 }
 
 // Receiving the message and handling it
-static int gen_msg_set_unack(struct bt_mesh_model* model,
+static int gen_msg_generic(struct bt_mesh_model* model,
     struct bt_mesh_msg_ctx* ctx,
     struct net_buf_simple* buf) {
-    // First 16 bits set the msg length
+
+    enum msg_type type = net_buf_simple_pull_u8(buf);
     uint16_t len = net_buf_simple_pull_le16(buf);
-    char msg_str[len + 1]; // Why does this work? o.o
-    for (uint16_t i = 0; i < len; i++) {
-        char c = net_buf_simple_pull_u8(buf);
-        msg_str[i] = c;
-    }
-    msg_str[len] = '\0';
+    uint8_t* msg_buf = net_buf_simple_pull_mem(buf, len);
 
-    if (strlen(msg_str) == 0) {
-        // handle the error
-        printk("Error: msg_str empty");
-        return;
-    }
-
-    uint8_t tid = net_buf_simple_pull_u8(buf);
-    int32_t trans = 0;
-    int32_t delay = 0;
-
-    if (buf->len) {
-        trans = model_time_decode(net_buf_simple_pull_u8(buf));
-        delay = net_buf_simple_pull_u8(buf) * 5;
+    switch (type) {
+    case MSG_HELLO:
+        break;
+        printk("got hello message: '%s'\n", msg_buf);
+    case MSG_HEARTBEAT:
+        printk("got heartbeat message: '%s'\n", msg_buf);
+        break;
+    default:
+        printk("Error: Unhandled message type '%c' (%d)\n", type, type);
+        return -1;
     }
 
-    /* Only perform change if the message wasn't a duplicate and the
-     * value is different.
-     */
-    if (tid == msg.tid && ctx->addr == msg.src) {
-        /* Duplicate */
-        return 0;
-    }
-
-    printk("Message received: %s\r\n", msg_str);
-
-    for (int i = 0; i < buf->len; i++) {
-        printf("%02x ", buf->data[i]);
-    }
-
-    msg.tid = tid;
-    msg.src = ctx->addr;
-    msg.val = msg_str;
-    msg.len = len;
-    msg.transition_time = trans;
-
-    /* Schedule the next action to happen on the delay, and keep
-     * transition time stored, so it can be applied in the timeout.
-     */
-    k_work_reschedule(&msg.work, K_MSEC(delay));
-
-    free(msg_str);
     return 0;
 }
 
@@ -192,7 +161,7 @@ static int gen_msg_set(struct bt_mesh_model* model,
     struct bt_mesh_msg_ctx* ctx,
     struct net_buf_simple* buf) {
     printk("gen_msg_set\n");
-    (void)gen_msg_set_unack(model, ctx, buf);
+    (void)gen_msg_generic(model, ctx, buf);
     // msg_status_send(model, ctx);
 
     return 0;
@@ -201,7 +170,7 @@ static int gen_msg_set(struct bt_mesh_model* model,
 static const struct bt_mesh_model_op gen_msg_srv_op[] = {
     { OP_ONOFF_GET, BT_MESH_LEN_EXACT(0), gen_msg_get },
     { OP_ONOFF_SET, BT_MESH_LEN_MIN(2), gen_msg_set },
-    { OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2), gen_msg_set_unack },
+    { OP_GENERIC_MSG, BT_MESH_LEN_MIN(2), gen_msg_generic },
     BT_MESH_MODEL_OP_END,
 };
 
@@ -216,12 +185,12 @@ static int gen_msg_status(struct bt_mesh_model* model,
         uint8_t target = net_buf_simple_pull_u8(buf);
         int32_t remaining_time = model_time_decode(net_buf_simple_pull_u8(buf));
 
-        printk("OnOff status: %s -> %s: (%d ms)\n", present,
+        printk("OnOff status: %c -> %c: (%d ms)\n", present,
             target, remaining_time);
         return 0;
     }
 
-    printk("OnOff status: %s\n", present);
+    printk("OnOff status: %c\n", present);
 
     return 0;
 }
@@ -281,13 +250,12 @@ static const struct bt_mesh_prov prov = {
 };
 
 // Send a message Generic Client to all nodes.
-int gen_msg_send(char* msg_str) {
+int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
     struct bt_mesh_msg_ctx ctx = {
         .app_idx = models[3].keys[0], /* Use the bound key */
         .addr = BT_MESH_ADDR_ALL_NODES,
         .send_ttl = BT_MESH_TTL_DEFAULT,
     };
-    static uint8_t tid;
 
     if (ctx.app_idx == BT_MESH_KEY_UNUSED) {
         printk("The Generic OnOff Client must be bound to a key before "
@@ -295,25 +263,32 @@ int gen_msg_send(char* msg_str) {
         return -ENOENT;
     }
 
-    uint16_t len = strlen(msg_str);
-
-    BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK, len * 2); // 2 2x8
-    bt_mesh_model_msg_init(&buf, OP_ONOFF_SET_UNACK);
-
-    // First 16 bits of message are the message length
-    net_buf_simple_add_le16(&buf, len);
-    for (uint16_t i = 0; i < len; i++) {
-        net_buf_simple_add_u8(&buf, msg_str[i]);
+    const size_t max = UINT16_MAX - sizeof(uint16_t) - sizeof(uint8_t);
+    if (len > max) {
+        printk("Error: Tried to send message of length %d, but maximum possible is %d", len, max);
+        return -1;
     }
 
-    printk("Sending message: %s\n", msg_str);
+    // size is:
+    // 1 byte header
+    // 2 bytes length
+    // <length> bytes data
+    BT_MESH_MODEL_BUF_DEFINE(buf, OP_GENERIC_MSG, (uint16_t)(sizeof(uint8_t) + sizeof(uint16_t) + len));
+    bt_mesh_model_msg_init(&buf, OP_GENERIC_MSG);
+
+    net_buf_simple_add_u8(&buf, (uint8_t)type);
+    net_buf_simple_add_le16(&buf, (uint16_t)len);
+    net_buf_simple_add_mem(&buf, (const void*)msg_buf, len);
+
+    printk("Sending message of length %d\n", len);
 
     return bt_mesh_model_send(&models[3], &ctx, &buf, NULL, NULL);
 }
 
 static void button_pressed(struct k_work* work) {
     if (bt_mesh_is_provisioned()) {
-        (void)gen_msg_send("hello world");
+        const char hello_msg[] = "hello world";
+        (void)gen_msg_send(MSG_HELLO, hello_msg, sizeof(hello_msg));
         return;
     }
 

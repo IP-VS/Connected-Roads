@@ -22,10 +22,15 @@
 #include "board.h"
 #include "printk.h"
 
-/** Broadcasts a string to the mesh */
-int gen_msg_send(char* val);
+// human-readable header byte for each message
+enum msg_type {
+    MSG_HELLO = 'o',
+    MSG_HEARTBEAT = 'h',
+};
 
-static uint8_t dev_uuid[16];
+// Broadcasts a message to the mesh
+int gen_msg_send(enum msg_type type, const void* val, size_t len);
+
 void msgdata_init(void);
 
 #endif /* MSGDATA_H */
