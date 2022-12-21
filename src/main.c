@@ -28,9 +28,6 @@ void main(void) {
 
     printk("Startup \r\n");
 
-    int err;
-
-
     printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
     if (wait_for_button_press(5)) {
         provision();

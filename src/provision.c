@@ -11,14 +11,15 @@ static uint8_t node_uuid[16];
 
 void dev_uuid_init() {
     int err = 0;
-	if (IS_ENABLED(CONFIG_HWINFO)) {
-		err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
-	}
+    if (IS_ENABLED(CONFIG_HWINFO)) {
+        err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
+    }
 
-	if (err < 0) {
-		dev_uuid[0] = 0xdd;
-		dev_uuid[1] = 0xdd;
-	}
+    if (err < 0) {
+        printk("Couldn't get hardware device id, defaulting to 0xdddd\n");
+        dev_uuid[0] = 0xdd;
+        dev_uuid[1] = 0xdd;
+    }
 }
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
@@ -111,7 +112,6 @@ void configure_self(struct bt_mesh_cdb_node* self) {
     struct bt_mesh_cdb_app_key* key;
     uint8_t status = 0;
     int err;
-
     printk("Configuring self...\r\n");
 
     key = bt_mesh_cdb_app_key_get(app_idx);
@@ -243,12 +243,14 @@ void unprovisioned_beacon(uint8_t uuid[16],
     memcpy(node_uuid, uuid, 16);
     k_sem_give(&sem_unprov_beacon);
 }
-void node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
-    printk("Node added: net_idx=%04x, addr=%04x, num_elem=%d\r\n", net_idx, addr, num_elem);
+
+void node_added(uint16_t node_net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
+    printk("Node added: net_idx=%04x, addr=%04x, num_elem=%d\r\n", node_net_idx, addr, num_elem);
     node_addr = addr;
     k_sem_give(&sem_node_added);
     printk("Sem given for node_added\r\n");
 }
+
 int bt_ready(void) {
     uint8_t net_key[16], dev_key[16];
     int err;
@@ -445,7 +447,6 @@ void provision(void) {
     }
 }
 int run_bt_node(void) {
-    uint8_t net_key[16], dev_key[16];
     int err;
 
     err = bt_mesh_init(&node_prov, &node_comp);
