@@ -51,7 +51,7 @@ var socketListener = function () {
             // }
             log('Microphone data received: ' + msg.replace(/[^0-9,]/g, ''));
         }
-            
+
         // Received node list parse from json string
         try {
             var nodes = JSON.parse(msg);
@@ -110,7 +110,7 @@ var rmNode = function (node) {
     socket.send('rmNode:' + node);
 }
 
-var log = function(msg) {
+var log = function (msg) {
     // Append log to output
     if (msg.length > 2) {
         var msgElement = document.createElement('p');
@@ -121,3 +121,14 @@ var log = function(msg) {
         document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
     }
 }
+
+// On page load
+document.addEventListener('DOMContentLoaded', function () {
+    // Cmd box
+    document.getElementById('sendbtn').addEventListener('click', function (event) {
+        var msg = document.getElementById('cmdinput').value;
+        console.log('Send: ' + msg);
+        socket.send("SND" + msg);
+        document.getElementById('cmdinput').value = '';
+    });
+});

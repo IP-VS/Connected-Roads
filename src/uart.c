@@ -24,15 +24,20 @@ static void uart_fifo_callback(const struct device *dev, void *user_data)
 		// Process the received data
 		printk("Received %d bytes: %s \n", rx_len, rx_data);
 
-		if (strncmp(rx_data, "AT", 3) == 0) {
-			printk("AT command received\n");
+		if (strncmp(rx_data, "SND", 3) == 0) {
+			printk("SND command received\n");
 			// Send to mesh
 			gen_msg_send(&rx_data[3]);
-		} else if (strncmp(rx_data, "AT+TEST", 7) == 0) {
-			printk("AT+TEST command received\n");
+		} else if (strncmp(rx_data, "ADV", 3) == 0) {
+			printk("ADV command received\n");
+			// Advertise this node as a gateway
+			gen_msg_send(&rx_data[0]);
 		} else {
 			printk("Unknown command received\n");
 		}
+		// Reset the buffer
+		rx_len = 0;
+		memset(&rx_data[0], 0, sizeof(rx_data));
 	}
 }
 

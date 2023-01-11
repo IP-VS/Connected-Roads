@@ -13,7 +13,12 @@ function initSerial(wsServer: ws.Server) {
     /* Connect serial port */
     serialport = new SerialPort({
         path: process.env.SERIAL_PORT ?? "/dev/ttyUSB0",
-        baudRate: parseInt(process.env.BAUD_RATE ?? "115200") ?? 115200
+        baudRate: parseInt(process.env.BAUD_RATE ?? "115200") ?? 115200,
+        // flowControl RTS/CTS
+        rtscts: true,
+        dataBits: 8,
+        stopBits: 1,
+        parity: 'none'
     });
 
     serialport.on('error', (err) => {

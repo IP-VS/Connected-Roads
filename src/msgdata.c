@@ -149,6 +149,7 @@ static int gen_msg_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
+char adr_buf[16];
 // Receiving the message and handling it
 static int gen_msg_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
@@ -186,6 +187,18 @@ static int gen_msg_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 	}
 
 	printk("Message received: %s\r\n", msg_str);
+
+	// Check if this is an advertiser msg
+	if (strncmp(msg_str, "ADV", 3) == 0) {
+		snprintf(adr_buf, sizeof(adr_buf), "%d", primary_addr);
+
+		printk("ADV command received %s %s\n", adr_buf, &msg_str[3]);
+		// Compare &msg_str[3] with the address of the device
+		if (strcmp(adr_buf, &msg_str[3]) != 0) {
+			printk("Setup gateway ID: %s\n", &msg_str[3]);
+			recv_addr = &msg_str[3];
+		}
+	}
 
 	// Mesh configured properly, so give back sempahore TODO: make this more robust
 	k_sem_give(&prov_sem);
@@ -317,6 +330,7 @@ static const struct bt_mesh_prov prov = {
 // Send a message Generic Client to all nodes.
 int gen_msg_send(char *msg_str)
 {
+	printk("gen_msg_send to addr: %d\n", recv_addr);
 	struct bt_mesh_msg_ctx ctx = {
 		.app_idx = models[3].keys[0], /* Use the bound key */
 		.addr = recv_addr,
