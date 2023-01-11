@@ -1,0 +1,41 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.log {
+  position: fixed;
+  bottom: 0;
+  left: 60px;
+}
+
+#output {
+  height: 200px;
+  width: 600px;
+  overflow: auto;
+}
+
+pre {
+  color: grey;
+}
+
+table, th, td {
+  border: 1px solid;
+}
+
+td, th {
+  padding: 10px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 80% 20%;
+}

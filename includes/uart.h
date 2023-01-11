@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UART_H
+#define UART_H
 
 /*
  * This header-only API contains helpers for reading and writing arbitrary data
@@ -78,3 +79,4 @@ bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char 
  * Read from uart device until buffer is full.
  */
 void uart_read(const struct device* uart_dev, char* buf, size_t len);
+#endif // UART_H

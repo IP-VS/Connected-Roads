@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+  app:
+    working_dir: /workdir/project
+    container_name: nrfconnect
+    #image: bostrot/nrfconnect-sdk
+    build: .
+    # run forever
+    command: tail -f /dev/null
+    volumes:
+      - ../:/workdir/project

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PRINTK_H
+#define PRINTK_H
 
 /*
  * Overrides "printk()" by #define-ing it to instead call
@@ -29,10 +30,10 @@ static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 #define printk_raw(...)                            \
     do {                                           \
-        int size = snprintf(NULL, 0, __VA_ARGS__); \
-        char buf[size + 1];                        \
-        snprintf(buf, sizeof(buf), __VA_ARGS__);   \
-        uart_write(dev, buf, sizeof(buf));         \
+        int _size = snprintf(NULL, 0, __VA_ARGS__); \
+        char _buf[_size + 1];                        \
+        snprintf(_buf, sizeof(_buf), __VA_ARGS__);   \
+        uart_write(dev, _buf, sizeof(_buf));         \
     } while (false)
 
 // override printk
@@ -41,3 +42,5 @@ static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
         printk_raw("%s:%d: ", __FILE__, __LINE__); \
         printk_raw(__VA_ARGS__);                   \
     } while (false)
+
+#endif // PRINTK_H

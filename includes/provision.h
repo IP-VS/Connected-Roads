@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef PROVISION_H
+#define PROVISION_H
 #include <assert.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -37,10 +39,12 @@ void button_pressed(const struct device* dev, struct gpio_callback* cb, uint32_t
 
 void button_init(void);
 
-bool wait_for_button_press(int timeout_s);
+bool wait_for_button_press(unsigned timeout_s);
 
 void provision(void);
 
 int run_bt_node(void);
 
-void dev_uuid_init();
+void dev_uuid_init(void);
+
+#endif /* PROVISION_H */

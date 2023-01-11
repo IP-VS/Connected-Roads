@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CUSTOM_ASSERT_H
+#define CUSTOM_ASSERT_H
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -22,3 +23,5 @@
             abort();                                                                                  \
         }                                                                                             \
     } while (0)
+
+#endif // CUSTOM_ASSERT_H
