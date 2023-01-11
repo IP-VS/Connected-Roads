@@ -54,7 +54,7 @@ static void button_cb(const struct device* port, struct gpio_callback* cb,
 }
 #endif /* BUTTON0 */
 
-static int led_init(void) {
+static int led0_init(void) {
 #if DT_NODE_EXISTS(LED0)
     int err;
 
@@ -74,7 +74,8 @@ static int led_init(void) {
     return 0;
 }
 
-static int button_init(struct k_work* button_pressed) {
+// intializes button 0 to trigger an interrupt on the rising edge
+static int button0_init(struct k_work* button_pressed) {
 #if DT_NODE_EXISTS(BUTTON0)
     int err;
 
@@ -97,27 +98,28 @@ static int button_init(struct k_work* button_pressed) {
     gpio_init_callback(&gpio_cb, button_cb, BIT(BUTTON0_PIN));
     gpio_add_callback(button_dev, &gpio_cb);
 #else
-    printk("WARNING: Buttons not supported on this board.\n");
+    #error "Buttons not supported on this board!"
 #endif
-
     return 0;
 }
 
 int board_init(struct k_work* button_pressed) {
     int err;
 
-    err = led_init();
+    err = led0_init();
     if (err) {
         printk("Failed to init LEDs: %d\n", err);
         return err;
     }
 
-    return button_init(button_pressed);
+    return button0_init(button_pressed);
 }
 
-void board_led_set(bool val) {
+void board_led0_set(bool val) {
 #if DT_NODE_EXISTS(LED0)
     gpio_pin_set(led_dev, LED0_PIN, val);
+#else
+    printk("LEDs are not supported on this board, failed to set led0 via board_led0_set.\n");
 #endif
 }
 

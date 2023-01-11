@@ -7,17 +7,17 @@
 #define OP_GENERIC_MSG BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define OP_ONOFF_STATUS BT_MESH_MODEL_OP_2(0x82, 0x04)
 
-static void attention_on(struct bt_mesh_model* mod) {
-    board_led_set(true);
+static void health_srv_attention_on(struct bt_mesh_model* mod) {
+    board_led0_set(true);
 }
 
-static void attention_off(struct bt_mesh_model* mod) {
-    board_led_set(false);
+static void health_srv_attention_off(struct bt_mesh_model* mod) {
+    board_led0_set(false);
 }
 
 static const struct bt_mesh_health_srv_cb health_cb = {
-    .attn_on = attention_on,
-    .attn_off = attention_off,
+    .attn_on = health_srv_attention_on,
+    .attn_off = health_srv_attention_off,
 };
 
 static struct bt_mesh_health_srv health_srv = {
@@ -61,50 +61,6 @@ static inline int32_t model_time_decode(uint8_t val) {
     return steps * time_res[resolution];
 }
 
-static inline uint8_t model_time_encode(int32_t ms) {
-    if (ms == SYS_FOREVER_MS) {
-        return 0x3f;
-    }
-
-    for (int i = 0; i < ARRAY_SIZE(time_res); i++) {
-        if (ms >= BIT_MASK(6) * time_res[i]) {
-            continue;
-        }
-
-        uint8_t steps = ceiling_fraction(ms, time_res[i]);
-
-        return steps | (i << 6);
-    }
-
-    return 0x3f;
-}
-
-static int msg_status_send(struct bt_mesh_model* model,
-    struct bt_mesh_msg_ctx* ctx) {
-    uint32_t remaining;
-
-    BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_STATUS, 3);
-    bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
-
-    remaining = k_ticks_to_ms_floor32(
-                    k_work_delayable_remaining_get(&msg.work))
-        + msg.transition_time;
-
-    /* Check using remaining time instead of "work pending" to make the
-     * msg status send the right value on instant transitions. As the
-     * work item is executed in a lower priority than the mesh message
-     * handler, the work will be pending even on instant transitions.
-     */
-    if (remaining) {
-        net_buf_simple_add_le16(&buf, msg.len);
-        net_buf_simple_add_u8(&buf, model_time_encode(remaining));
-    } else {
-        net_buf_simple_add_u8(&buf, msg.val);
-    }
-
-    return bt_mesh_model_send(model, ctx, &buf, NULL, NULL);
-}
-
 static bool received = false;
 static void msg_timeout(struct k_work* work) {
     if (msg.transition_time) {
@@ -114,14 +70,14 @@ static void msg_timeout(struct k_work* work) {
          * progress, regardless of the target value, according to the
          * Bluetooth Mesh Model specification, section 3.1.1.
          */
-        board_led_set(true);
+        board_led0_set(true);
 
         k_work_reschedule(&msg.work, K_MSEC(msg.transition_time));
         msg.transition_time = 0;
         return;
     }
 
-    board_led_set(!received);
+    board_led0_set(!received);
 }
 
 /* Generic OnOff Server message handlers */
@@ -224,14 +180,10 @@ static const struct bt_mesh_comp comp = {
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number) {
     printk("OOB Number: %u\n", number);
-
-    board_output_number(action, number);
-
     return 0;
 }
 
 static void prov_complete(uint16_t net_idx, uint16_t addr) {
-    board_prov_complete();
 }
 
 static void prov_reset(void) {

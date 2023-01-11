@@ -1,13 +1,4 @@
-#ifndef MSGDATA_H
-#define MSGDATA_H
-
-/* msgdata.h - msg data */
-
-/*
- * Copyright (c) 2017 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+#pragma once
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -22,15 +13,16 @@
 #include "board.h"
 #include "printk.h"
 
-// human-readable header byte for each message
+// Human-readable header byte for each message.
 enum msg_type {
     MSG_HELLO = 'o',
     MSG_HEARTBEAT = 'h',
 };
 
-// Broadcasts a message to the mesh
+// Broadcasts a message to the mesh.
 int gen_msg_send(enum msg_type type, const void* val, size_t len);
 
+// Initializes the board, gets hardware info, etc. in preparation
+// to sending and receiving data.
 void msgdata_init(void);
 
-#endif /* MSGDATA_H */
