@@ -150,7 +150,7 @@ void configure_node(struct bt_mesh_cdb_node* node) {
     NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_RX_SDU_MAX);
     struct bt_mesh_comp_p0_elem elem;
     struct bt_mesh_cdb_app_key* key;
-    struct bt_mesh_comp_p0 comp;
+    struct bt_mesh_comp_p0 local_comp;
     uint8_t status = 0;
     int err = 0;
     uint16_t elem_addr = 0;
@@ -181,17 +181,17 @@ void configure_node(struct bt_mesh_cdb_node* node) {
         return;
     }
 
-    err = bt_mesh_comp_p0_get(&comp, &buf);
+    err = bt_mesh_comp_p0_get(&local_comp, &buf);
     if (err) {
         printk("Unable to parse composition data (err: %d)\r\n", err);
         return;
     }
 
     elem_addr = node->addr;
-    while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
+    while (bt_mesh_comp_p0_elem_pull(&local_comp, &elem)) {
         printk("Element @ 0x%04x: %u + %u models\r\n", elem_addr,
             elem.nsig, elem.nvnd);
-        for (int i = 0; i < elem.nsig; i++) {
+        for (int i = 0; i < (int)elem.nsig; i++) {
             uint16_t id = bt_mesh_comp_p0_elem_mod(&elem, i);
 
             if (id == BT_MESH_MODEL_ID_CFG_CLI || id == BT_MESH_MODEL_ID_CFG_SRV) {
@@ -209,7 +209,7 @@ void configure_node(struct bt_mesh_cdb_node* node) {
             }
         }
 
-        for (int i = 0; i < elem.nvnd; i++) {
+        for (int i = 0; i < (int)elem.nvnd; i++) {
             struct bt_mesh_mod_id_vnd id = bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
 
             printk("Binding AppKey to model 0x%03x:%04x:%04x\r\n",
