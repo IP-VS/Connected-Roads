@@ -100,8 +100,8 @@ static int gen_msg_generic(struct bt_mesh_model* model,
 
     switch (type) {
     case MSG_HELLO:
-        break;
         printk("got hello message: '%s'\n", msg_buf);
+        break;
     case MSG_HEARTBEAT:
         printk("got heartbeat message: '%s'\n", msg_buf);
         break;
