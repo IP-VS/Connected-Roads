@@ -30,10 +30,10 @@ static const struct device* dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 #define printk_raw(...)                            \
     do {                                           \
-        int size = snprintf(NULL, 0, __VA_ARGS__); \
-        char buf[size + 1];                        \
-        snprintf(buf, sizeof(buf), __VA_ARGS__);   \
-        uart_write(dev, buf, sizeof(buf));         \
+        int _size = snprintf(NULL, 0, __VA_ARGS__); \
+        char _buf[_size + 1];                        \
+        snprintf(_buf, sizeof(_buf), __VA_ARGS__);   \
+        uart_write(dev, _buf, sizeof(_buf));         \
     } while (false)
 
 // override printk
