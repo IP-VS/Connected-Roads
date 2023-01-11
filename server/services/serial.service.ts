@@ -100,7 +100,7 @@ function initSerial(wsServer: ws.Server) {
                     wsServer.clients.forEach((client: any) => {
                         client.send(NodeList.toString());
                     });
-                }, 5000);
+                }, 10000);
 
                 NodeList.addNode(node);
                 // Send nodeID to the client

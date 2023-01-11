@@ -1,9 +1,23 @@
 #include "msgdata.h"
 
-#define OP_ONOFF_GET       BT_MESH_MODEL_OP_2(0x82, 0x01)
-#define OP_ONOFF_SET       BT_MESH_MODEL_OP_2(0x82, 0x02)
+#define OP_ONOFF_GET BT_MESH_MODEL_OP_2(0x82, 0x01)
+#define OP_ONOFF_SET BT_MESH_MODEL_OP_2(0x82, 0x02)
 #define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
-#define OP_ONOFF_STATUS    BT_MESH_MODEL_OP_2(0x82, 0x04)
+#define OP_ONOFF_STATUS BT_MESH_MODEL_OP_2(0x82, 0x04)
+
+static struct device *uart_dev;
+static char *uart_buffer[5]; // Create buffer for uart read
+static uint16_t primary_addr = 0; // This node's address
+static struct k_sem prov_sem;
+static struct bt_mesh_model models[];
+static bool configured = false;
+
+// Node added cb (provisioning complete and configured)
+static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
+{
+	printk("Device 0x%04x provisioned", addr);
+	k_sem_give(&prov_sem);
+}
 
 static void attention_on(struct bt_mesh_model *mod)
 {
@@ -27,8 +41,8 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct {
-	char* val;
-    uint16_t len;
+	char *val;
+	uint16_t len;
 	uint8_t tid;
 	uint16_t src;
 	uint32_t transition_time;
@@ -81,16 +95,14 @@ static inline uint8_t model_time_encode(int32_t ms)
 	return 0x3f;
 }
 
-static int msg_status_send(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx)
+static int msg_status_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx)
 {
 	uint32_t remaining;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_STATUS, 3);
 	bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
 
-	remaining = k_ticks_to_ms_floor32(
-			    k_work_delayable_remaining_get(&msg.work)) +
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&msg.work)) +
 		    msg.transition_time;
 
 	/* Check using remaining time instead of "work pending" to make the
@@ -130,34 +142,32 @@ static void msg_timeout(struct k_work *work)
 
 /* Generic OnOff Server message handlers */
 
-static int gen_msg_get(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int gen_msg_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
 {
 	// msg_status_send(model, ctx);
 	return 0;
 }
 
 // Receiving the message and handling it
-static int gen_msg_set_unack(struct bt_mesh_model *model,
-			       struct bt_mesh_msg_ctx *ctx,
-			       struct net_buf_simple *buf)
+static int gen_msg_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			     struct net_buf_simple *buf)
 {
-    // First 16 bits set the msg length
+	// First 16 bits set the msg length
 	uint16_t len = net_buf_simple_pull_le16(buf);
 	char msg_str[len + 1]; // Why does this work? o.o
-    for (uint16_t i = 0; i < len; i++) {
-        char c = net_buf_simple_pull_u8(buf);
-   		msg_str[i] = c;
-    }
+	for (uint16_t i = 0; i < len; i++) {
+		char c = net_buf_simple_pull_u8(buf);
+		msg_str[i] = c;
+	}
 	msg_str[len] = '\0';
 
-    if (strlen(msg_str) == 0) {
-        // handle the error
-        printk("Error: msg_str empty");
-        return;
-    }
-    
+	if (strlen(msg_str) == 0) {
+		// handle the error
+		printk("Error: msg_str empty");
+		return;
+	}
+
 	uint8_t tid = net_buf_simple_pull_u8(buf);
 	int32_t trans = 0;
 	int32_t delay = 0;
@@ -177,14 +187,17 @@ static int gen_msg_set_unack(struct bt_mesh_model *model,
 
 	printk("Message received: %s\r\n", msg_str);
 
-    for (int i = 0; i < buf->len; i++) {
-        printf("%02x ", buf->data[i]);
-    }
+	// Mesh configured properly, so give back sempahore TODO: make this more robust
+	k_sem_give(&prov_sem);
+
+	for (int i = 0; i < buf->len; i++) {
+		printf("%02x ", buf->data[i]);
+	}
 
 	msg.tid = tid;
 	msg.src = ctx->addr;
 	msg.val = msg_str;
-    msg.len = len;
+	msg.len = len;
 	msg.transition_time = trans;
 
 	/* Schedule the next action to happen on the delay, and keep
@@ -192,15 +205,14 @@ static int gen_msg_set_unack(struct bt_mesh_model *model,
 	 */
 	k_work_reschedule(&msg.work, K_MSEC(delay));
 
-    free(msg_str);
+	free(msg_str);
 	return 0;
 }
 
-static int gen_msg_set(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int gen_msg_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
 {
-    printk("gen_msg_set\n");
+	printk("gen_msg_set\n");
 	(void)gen_msg_set_unack(model, ctx, buf);
 	// msg_status_send(model, ctx);
 
@@ -208,27 +220,23 @@ static int gen_msg_set(struct bt_mesh_model *model,
 }
 
 static const struct bt_mesh_model_op gen_msg_srv_op[] = {
-	{ OP_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_msg_get },
-	{ OP_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_msg_set },
-	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_msg_set_unack },
+	{ OP_ONOFF_GET, BT_MESH_LEN_EXACT(0), gen_msg_get },
+	{ OP_ONOFF_SET, BT_MESH_LEN_MIN(2), gen_msg_set },
+	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2), gen_msg_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Generic OnOff Client */
-
-static int gen_msg_status(struct bt_mesh_model *model,
-			    struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf)
+static int gen_msg_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	uint8_t present = net_buf_simple_pull_u8(buf);
 
 	if (buf->len) {
 		uint8_t target = net_buf_simple_pull_u8(buf);
-		int32_t remaining_time =
-			model_time_decode(net_buf_simple_pull_u8(buf));
+		int32_t remaining_time = model_time_decode(net_buf_simple_pull_u8(buf));
 
-		printk("OnOff status: %s -> %s: (%d ms)\n", present,
-		       target, remaining_time);
+		printk("OnOff status: %s -> %s: (%d ms)\n", present, target, remaining_time);
 		return 0;
 	}
 
@@ -238,7 +246,7 @@ static int gen_msg_status(struct bt_mesh_model *model,
 }
 
 static const struct bt_mesh_model_op gen_msg_cli_op[] = {
-	{OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_msg_status},
+	{ OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_msg_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -246,10 +254,8 @@ static const struct bt_mesh_model_op gen_msg_cli_op[] = {
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_msg_srv_op, NULL,
-		      NULL),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_msg_cli_op, NULL,
-		      NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_msg_srv_op, NULL, NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_msg_cli_op, NULL, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {
@@ -263,24 +269,37 @@ static const struct bt_mesh_comp comp = {
 };
 
 /* Provisioning */
-
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	printk("OOB Number: %u\n", number);
 
 	board_output_number(action, number);
+	k_sem_give(&prov_sem);
 
 	return 0;
 }
 
+// Provisioning is complete but NOT configured yet
 static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
+	// This function will be called when a BT mesh is provisioned
+	// Do something here, such as printing a message or setting a flag
+	printk("Provisioning complete: net_idx = %u, addr = %u\n", net_idx, addr);
+
+	primary_addr = addr;
 	board_prov_complete();
+	k_sem_give(&prov_sem);
+
+	// send_msg_from_uart(dev);
+
+	// // Send a message to all nodes
+	// gen_msg_send("Hello from the primary node!");
 }
 
 static void prov_reset(void)
 {
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
+	k_sem_give(&prov_sem);
 }
 
 static uint8_t dev_uuid[16];
@@ -292,14 +311,15 @@ static const struct bt_mesh_prov prov = {
 	.output_number = output_number,
 	.complete = prov_complete,
 	.reset = prov_reset,
+	.node_added = prov_node_added,
 };
 
 // Send a message Generic Client to all nodes.
-int gen_msg_send(char* msg_str)
+int gen_msg_send(char *msg_str)
 {
 	struct bt_mesh_msg_ctx ctx = {
 		.app_idx = models[3].keys[0], /* Use the bound key */
-		.addr = BT_MESH_ADDR_ALL_NODES,
+		.addr = recv_addr,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 	};
 	static uint8_t tid;
@@ -310,13 +330,13 @@ int gen_msg_send(char* msg_str)
 		return -ENOENT;
 	}
 
-    uint16_t len = strlen(msg_str);
+	uint16_t len = strlen(msg_str);
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK, len * 2); // 2 2x8
 	bt_mesh_model_msg_init(&buf, OP_ONOFF_SET_UNACK);
 
-    // First 16 bits of message are the message length
-    net_buf_simple_add_le16(&buf, len);
+	// First 16 bits of message are the message length
+	net_buf_simple_add_le16(&buf, len);
 	for (uint16_t i = 0; i < len; i++) {
 		net_buf_simple_add_u8(&buf, msg_str[i]);
 	}
@@ -384,6 +404,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
+	k_sem_init(&prov_sem, 0, 1);
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
@@ -400,8 +421,9 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 }
 
-void msgdata_init(void)
+void msgdata_init(struct device *dev)
 {
+	uart_dev = dev;
 	static struct k_work button_work;
 	int err = -1;
 
@@ -430,5 +452,41 @@ void msgdata_init(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+	}
+
+	// Initialize work queue
+	// k_work_init(&send_msg_from_uart_work, send_msg_from_uart);
+
+	// // Work queue with priority 5
+	// k_work_queue_start(&send_msg_from_uart_work, work_q_stack, sizeof(work_q_stack),
+	// 		   K_PRIO_COOP(5), NULL);
+	// // Add work to work queue
+	// k_work_submit_to_queue(&send_msg_from_uart_work, send_msg_from_uart);
+
+	// struct k_work_q my_work_q;
+
+	// k_work_queue_init(&my_work_q);
+
+	// k_work_queue_start(&my_work_q, my_stack_area, K_THREAD_STACK_SIZEOF(my_stack_area),
+	// 		   MY_PRIORITY, NULL);
+
+	// struct k_work work;
+	// k_work_init(&work, send_msg_from_uart);
+	// k_work_submit(&work);
+
+	// k_timer_init(&timer, timer_callback, NULL);
+	// k_timer_start(&timer, K_SECONDS(5), K_SECONDS(5));
+}
+
+void test_init(uint8_t sleeptime)
+{
+	int err;
+	if (IS_ENABLED(CONFIG_HWINFO)) {
+		err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
+	}
+
+	if (err < 0) {
+		dev_uuid[0] = 0xdd;
+		dev_uuid[1] = 0xdd;
 	}
 }

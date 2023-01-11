@@ -15,46 +15,47 @@
 #include "heartbeat.h"
 #include "provision.h"
 #include "microphone.h"
-#include "msgdata.h"
 #include "board.h"
+#include "msgdata.h"
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
-    "Console device is not ACM CDC UART device");
+	     "Console device is not ACM CDC UART device");
 
-void main(void) {
-    /* uart */
-    uart_init(dev);
-    dev_uuid_init();
+void main(void)
+{
+	/* uart */
+	uart_init(dev);
+	dev_uuid_init();
 
-    printk("Startup \r\n");
+	printk("Startup \r\n");
 
-    int err;
+	int err;
 
+	printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
+	if (wait_for_button_press(5)) {
+		provision();
+		printk("Done provisioning\r\n");
+	} else {
+		msgdata_init(dev);
+		test_init(5);
+		// Heartbeat init AFTER msgdata init
+		// heartbeat_init(5);
+	}
 
-    printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
-    if (wait_for_button_press(5)) {
-        provision();
-        printk("Done provisioning\r\n");
-    } else {
-        msgdata_init();
-        // Heartbeat init AFTER msgdata init
-        heartbeat_init(5);
-    }
+	printk("Main reached end :)\r\n");
 
-    printk("Main reached end :)\r\n");
-
-    // Mic stuff
-    // while (1) {
-    //     k_sleep(K_SECONDS(1));
-    //     if (bt_mesh_is_provisioned()) {
-    //         printk("Node is provisioned!\r\n");
-    //         printk("Mic Init \r\n");
-    //         microphone_init();
-    //         break;
-    //     }
-    // }
-    // printk("Ready to do work!\r\n");
-    // while (1) {
-    //     k_sleep(K_SECONDS(1));
-    // }
+	// Mic stuff
+	// while (1) {
+	//     k_sleep(K_SECONDS(1));
+	//     if (bt_mesh_is_provisioned()) {
+	//         printk("Node is provisioned!\r\n");
+	//         printk("Mic Init \r\n");
+	//         microphone_init();
+	//         break;
+	//     }
+	// }
+	// printk("Ready to do work!\r\n");
+	// while (1) {
+	//     k_sleep(K_SECONDS(1));
+	// }
 }

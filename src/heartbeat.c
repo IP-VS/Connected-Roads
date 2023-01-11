@@ -13,17 +13,16 @@ static uint8_t dev_uuid[16];
 static struct k_timer timer;
 static void timer_callback(struct k_timer *timer) {
 	// Send alive msg
-    char* msg[50]; // Dynamically resizing does not work
-    strcpy(msg, "alive:UUID:");
-    // Add uuid to msg
-    sprintf(msg, "%s%02x%02x", msg, dev_uuid[0], dev_uuid[1]);
+    size_t n = snprintf(NULL, 0, "alive:UUID:%02x%02x", dev_uuid[0], dev_uuid[1]);
+	char msg[n+1];
+	(void)snprintf(msg, n+1, "alive:UUID:%02x%02x", dev_uuid[0], dev_uuid[1]);
+	msg[n] = 0;
 	if (bt_mesh_is_provisioned()) {
         (void)gen_msg_send(msg);
-        free(msg);
 		return;
 	}
-    free(msg);
 }
+
 
 void heartbeat_init(uint8_t sleeptime) {
     int err;
