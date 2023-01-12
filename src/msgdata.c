@@ -4,6 +4,21 @@
 
 #define OP_ONOFF_GET BT_MESH_MODEL_OP_2(0x82, 0x01)
 #define OP_ONOFF_SET BT_MESH_MODEL_OP_2(0x82, 0x02)
+#define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
+#define OP_ONOFF_STATUS BT_MESH_MODEL_OP_2(0x82, 0x04)
+
+static struct device* uart_dev;
+static char* uart_buffer[5]; // Create buffer for uart read
+static uint16_t primary_addr = 0; // This node's address
+static struct k_sem prov_sem;
+static struct bt_mesh_model models[];
+static bool configured = false;
+
+// Node added cb (provisioning complete and configured)
+static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
+    printk("Device 0x%04x provisioned", addr);
+    k_sem_give(&prov_sem);
+}
 #define OP_GENERIC_MSG BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define OP_ONOFF_STATUS BT_MESH_MODEL_OP_2(0x82, 0x04)
 
@@ -89,6 +104,7 @@ static int gen_msg_get(struct bt_mesh_model* model,
     return 0;
 }
 
+char adr_buf[16];
 // Receiving the message and handling it
 static int gen_msg_generic(struct bt_mesh_model* model,
     struct bt_mesh_msg_ctx* ctx,
@@ -177,17 +193,34 @@ static const struct bt_mesh_comp comp = {
 };
 
 /* Provisioning */
-
 static int output_number(bt_mesh_output_action_t action, uint32_t number) {
     printk("OOB Number: %u\n", number);
+
+    board_output_number(action, number);
+    k_sem_give(&prov_sem);
+
     return 0;
 }
 
+// Provisioning is complete but NOT configured yet
 static void prov_complete(uint16_t net_idx, uint16_t addr) {
+    // This function will be called when a BT mesh is provisioned
+    // Do something here, such as printing a message or setting a flag
+    printk("Provisioning complete: net_idx = %u, addr = %u\n", net_idx, addr);
+
+    primary_addr = addr;
+    board_prov_complete();
+    k_sem_give(&prov_sem);
+
+    // send_msg_from_uart(dev);
+
+    // // Send a message to all nodes
+    // gen_msg_send("Hello from the primary node!");
 }
 
 static void prov_reset(void) {
     bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
+    k_sem_give(&prov_sem);
 }
 
 static uint8_t dev_uuid[16];
@@ -199,15 +232,18 @@ static const struct bt_mesh_prov prov = {
     .output_number = output_number,
     .complete = prov_complete,
     .reset = prov_reset,
+    .node_added = prov_node_added,
 };
 
 // Send a message Generic Client to all nodes.
-int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
+int gen_msg_send(char* msg_str) {
+    printk("gen_msg_send to addr: %d\n", recv_addr);
     struct bt_mesh_msg_ctx ctx = {
         .app_idx = models[3].keys[0], /* Use the bound key */
-        .addr = BT_MESH_ADDR_ALL_NODES,
+        .addr = recv_addr,
         .send_ttl = BT_MESH_TTL_DEFAULT,
     };
+    static uint8_t tid;
 
     if (ctx.app_idx == BT_MESH_KEY_UNUSED) {
         printk("The Generic OnOff Client must be bound to a key before "
@@ -215,6 +251,7 @@ int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
         return -ENOENT;
     }
 
+    uint16_t len = strlen(msg_str);
     const size_t max = UINT16_MAX - sizeof(uint16_t) - sizeof(uint8_t);
     if (len > max) {
         printk("Error: Tried to send message of length %d, but maximum possible is %d", len, max);
@@ -294,6 +331,7 @@ static void bt_ready(int err) {
 
     printk("Bluetooth initialized\n");
 
+    k_sem_init(&prov_sem, 0, 1);
     err = bt_mesh_init(&prov, &comp);
     if (err) {
         printk("Initializing mesh failed (err %d)\n", err);
@@ -310,7 +348,8 @@ static void bt_ready(int err) {
     printk("Mesh initialized\n");
 }
 
-void msgdata_init(void) {
+void msgdata_init(struct device* dev) {
+    uart_dev = dev;
     static struct k_work button_work;
     int err = -1;
 
@@ -339,5 +378,40 @@ void msgdata_init(void) {
     err = bt_enable(bt_ready);
     if (err) {
         printk("Bluetooth init failed (err %d)\n", err);
+    }
+
+    // Initialize work queue
+    // k_work_init(&send_msg_from_uart_work, send_msg_from_uart);
+
+    // // Work queue with priority 5
+    // k_work_queue_start(&send_msg_from_uart_work, work_q_stack, sizeof(work_q_stack),
+    // 		   K_PRIO_COOP(5), NULL);
+    // // Add work to work queue
+    // k_work_submit_to_queue(&send_msg_from_uart_work, send_msg_from_uart);
+
+    // struct k_work_q my_work_q;
+
+    // k_work_queue_init(&my_work_q);
+
+    // k_work_queue_start(&my_work_q, my_stack_area, K_THREAD_STACK_SIZEOF(my_stack_area),
+    // 		   MY_PRIORITY, NULL);
+
+    // struct k_work work;
+    // k_work_init(&work, send_msg_from_uart);
+    // k_work_submit(&work);
+
+    // k_timer_init(&timer, timer_callback, NULL);
+    // k_timer_start(&timer, K_SECONDS(5), K_SECONDS(5));
+}
+
+void test_init(uint8_t sleeptime) {
+    int err;
+    if (IS_ENABLED(CONFIG_HWINFO)) {
+        err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
+    }
+
+    if (err < 0) {
+        dev_uuid[0] = 0xdd;
+        dev_uuid[1] = 0xdd;
     }
 }

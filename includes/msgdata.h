@@ -7,11 +7,18 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 
 #include "board.h"
 #include "printk.h"
+
+/* Receiver */
+static unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 
 // Human-readable header byte for each message.
 enum msg_type {

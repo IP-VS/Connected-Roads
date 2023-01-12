@@ -35,6 +35,19 @@ wsServer.on('connection', socket => {
         socket.send(NodeList.toString());
         socket.send('node:Removed');
       }
+    } else if (message.toString('utf8').indexOf('SND') > -1) {
+      var msg = message.toString('utf8').split('SND')[1];
+      serialport.write('SND' + msg);
+      // Wait 2 seconds
+      setTimeout(() => {
+
+        serialport.flush();
+        setTimeout(() => {
+
+          serialport.resume();
+        }, 2000);
+      }, 2000);
+
     }
   });
 });

@@ -11,7 +11,7 @@ static uint8_t dev_uuid[16];
 
 static struct k_timer timer;
 static void timer_callback(struct k_timer* timer) {
-    char buf[sizeof(dev_uuid)*2+1];
+    char buf[sizeof(dev_uuid) * 2 + 1];
     // Add uuid to msg
     char* iter = buf;
     for (size_t i = 0; i < sizeof(dev_uuid); ++i) {

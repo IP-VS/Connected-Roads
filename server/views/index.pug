@@ -13,6 +13,13 @@ block content
       div.log
         p Log:
         pre#output
+      input.text(
+        type='text'
+        name='cmd'
+        id='cmdinput'
+        placeholder='Send command'
+      )
+      button(type='button',id='sendbtn') Send
     div.status
       p Status:
       pre#serverconnection
