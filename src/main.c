@@ -39,7 +39,7 @@ void main(void)
 		msgdata_init(dev);
 		test_init(5);
 		// Heartbeat init AFTER msgdata init
-		// heartbeat_init(5);
+		heartbeat_init(5);
 	}
 
 	printk("Main reached end :)\r\n");
