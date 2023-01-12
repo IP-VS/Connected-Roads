@@ -9,4 +9,4 @@ RUN pipenv install --quiet --clear
 
 COPY detector.py ./
 
-CMD ["pipenv", "run", "python", "detector.py"]
+CMD ["sh", "-c", "pipenv run python detector.py --port ${LISTEN_PORT}"]
