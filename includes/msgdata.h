@@ -24,6 +24,8 @@ static unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 enum msg_type {
     MSG_HELLO = 'o',
     MSG_HEARTBEAT = 'h',
+    MSG_SND_COMM = 's',
+    MSG_ADV_COMM = 'a',
 };
 
 // Broadcasts a message to the mesh.
