@@ -268,7 +268,11 @@ int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
 
     printk("Sending message of length %d\n", len);
 
-    return bt_mesh_model_send(&models[3], &ctx, &buf, NULL, NULL);
+    int err = bt_mesh_model_send(&models[3], &ctx, &buf, NULL, NULL);
+    if (err) {
+        printk("Error: bt_mesh_model_send failed: err=%d\n", err);
+    }
+    return err;
 }
 
 static void button_pressed(struct k_work* work) {
