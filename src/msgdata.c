@@ -9,7 +9,8 @@
 
 static struct device* uart_dev;
 static char* uart_buffer[5]; // Create buffer for uart read
-static uint16_t primary_addr = 0; // This node's address
+uint16_t primary_addr = 0; // This node's address
+unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 static struct k_sem prov_sem;
 static struct bt_mesh_model models[];
 static bool configured = false;

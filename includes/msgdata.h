@@ -18,7 +18,9 @@
 #include "printk.h"
 
 /* Receiver */
-static unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
+extern unsigned int recv_addr;
+/* My addr */
+extern uint16_t primary_addr;
 
 // Human-readable header byte for each message.
 enum msg_type {
