@@ -1,19 +1,10 @@
-#ifndef MSGDATA_H
-#define MSGDATA_H
+#pragma once
 
-/* msgdata.h - msg data */
-
-/*
- * Copyright (c) 2017 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include <zephyr/settings/settings.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/zephyr.h>
@@ -29,21 +20,16 @@
 /* Receiver */
 static unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 
-/* Listen to UART */
-void send_msg_from_uart();
+// Human-readable header byte for each message.
+enum msg_type {
+    MSG_HELLO = 'o',
+    MSG_HEARTBEAT = 'h',
+};
 
-/* Generic OnOff Client */
-static int gen_msg_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf);
+// Broadcasts a message to the mesh.
+int gen_msg_send(enum msg_type type, const void* val, size_t len);
 
-/* Provisioning */
-static int output_number(bt_mesh_output_action_t action, uint32_t number);
+// Initializes the board, gets hardware info, etc. in preparation
+// to sending and receiving data.
+void msgdata_init(void);
 
-/** Broadcasts a string to the mesh */
-int gen_msg_send(char *val);
-
-static uint8_t dev_uuid[16];
-void msgdata_init(struct device *uart_dev);
-
-void test_init(uint8_t sleeptime);
-#endif /* MSGDATA_H */
