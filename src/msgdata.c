@@ -1,6 +1,6 @@
 #include "msgdata.h"
-#include "net/buf.h"
 #include <stdint.h>
+#include <zephyr/net/buf.h>
 
 #define OP_ONOFF_GET BT_MESH_MODEL_OP_2(0x82, 0x01)
 #define OP_ONOFF_SET BT_MESH_MODEL_OP_2(0x82, 0x02)
@@ -196,7 +196,6 @@ static const struct bt_mesh_comp comp = {
 static int output_number(bt_mesh_output_action_t action, uint32_t number) {
     printk("OOB Number: %u\n", number);
 
-    board_output_number(action, number);
     k_sem_give(&prov_sem);
 
     return 0;
@@ -209,7 +208,6 @@ static void prov_complete(uint16_t net_idx, uint16_t addr) {
     printk("Provisioning complete: net_idx = %u, addr = %u\n", net_idx, addr);
 
     primary_addr = addr;
-    board_prov_complete();
     k_sem_give(&prov_sem);
 
     // send_msg_from_uart(dev);
@@ -236,7 +234,7 @@ static const struct bt_mesh_prov prov = {
 };
 
 // Send a message Generic Client to all nodes.
-int gen_msg_send(char* msg_str) {
+int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
     printk("gen_msg_send to addr: %d\n", recv_addr);
     struct bt_mesh_msg_ctx ctx = {
         .app_idx = models[3].keys[0], /* Use the bound key */
@@ -251,7 +249,6 @@ int gen_msg_send(char* msg_str) {
         return -ENOENT;
     }
 
-    uint16_t len = strlen(msg_str);
     const size_t max = UINT16_MAX - sizeof(uint16_t) - sizeof(uint8_t);
     if (len > max) {
         printk("Error: Tried to send message of length %d, but maximum possible is %d", len, max);
@@ -348,7 +345,7 @@ static void bt_ready(int err) {
     printk("Mesh initialized\n");
 }
 
-void msgdata_init(struct device* dev) {
+void msgdata_init(void) {
     uart_dev = dev;
     static struct k_work button_work;
     int err = -1;
