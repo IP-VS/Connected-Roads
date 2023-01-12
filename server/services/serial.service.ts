@@ -68,18 +68,19 @@ function initSerial(wsServer: ws.Server) {
         console.log('Data:', data.toString('utf8'));
         var dataStr = data.toString('utf8').trim();
         // Node added
-        if (dataStr.indexOf('alive:UUID:') > -1) {
+        if (dataStr.indexOf('got heartbeat message') > -1) {
             try {
                 // Set device status
                 wsServer.clients.forEach(client => {
                     client.send('device:Connected');
                 });
                 // Get Node name
-                var nodeName = dataStr.split('alive:UUID:')[1].split(', ')[0];
+                var nodeName = dataStr.split('got heartbeat message: ')[1];
 
                 // Remove other chars
                 nodeName = nodeName.replace(/[^0-9a-z]/g, '');
-                if (nodeName.length != 4) {
+                // e.g. a6b3987620c88052
+                if (nodeName.length != 16) {
                     return;
                 }
                 let node = NodeList.getNode(nodeName);

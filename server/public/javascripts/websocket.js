@@ -62,7 +62,7 @@ var socketListener = function () {
                 var node = nodes[i];
                 // Add node to list
                 const nodeName = node.name; // Node_1
-                log('New Node added: ' + nodeName);
+                log('Node Heartbeat: ' + nodeName);
                 const nodeStatus = node.status;
                 var buttonElement = document.createElement('button');
                 buttonElement.innerText = 'Remove';
