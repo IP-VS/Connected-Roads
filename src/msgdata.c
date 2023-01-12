@@ -104,7 +104,6 @@ static int gen_msg_get(struct bt_mesh_model* model,
     return 0;
 }
 
-char adr_buf[16];
 // Receiving the message and handling it
 static int gen_msg_generic(struct bt_mesh_model* model,
     struct bt_mesh_msg_ctx* ctx,
@@ -116,13 +115,26 @@ static int gen_msg_generic(struct bt_mesh_model* model,
 
     switch (type) {
     case MSG_HELLO:
-        printk("got hello message: '%s'\n", msg_buf);
+        printk("bt: got hello message: '%s'\n", msg_buf);
         break;
     case MSG_HEARTBEAT:
-        printk("got heartbeat message: '%s'\n", msg_buf);
+        printk("bt: got heartbeat message: '%s'\n", msg_buf);
+        break;
+    case MSG_SND_COMM:
+        printk("bt: got SND message: '%s'\n", msg_buf);
+        break;
+    case MSG_ADV_COMM:
+        printk("bt: got ADV message: '%s'\n", msg_buf);
+        int adv_addr = atoi(msg_buf);
+        printk("ADV command received %d %s\n", adv_addr, msg_buf);
+        // Compare msg_buf with the address of the device
+        if (primary_addr != adv_addr) {
+            printk("Setup gateway ID: %s\n", msg_buf);
+            recv_addr = (unsigned int)adv_addr;
+        }
         break;
     default:
-        printk("Error: Unhandled message type '%c' (%d)\n", type, type);
+        printk("Error: Unhandled bt message type '%c' (%d)\n", type, type);
         return -1;
     }
 

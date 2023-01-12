@@ -1,6 +1,9 @@
 #include "uart.h"
 #include "printk.h"
 
+#include <msgdata.h>
+#include <ctype.h>
+
 struct k_mutex mtx_read;
 struct k_mutex mtx_write;
 
@@ -13,9 +16,8 @@ static int rx_len = 0;
 static void uart_fifo_callback(const struct device *dev, void *user_data)
 {
 	while (uart_fifo_read(dev, &rx_data[rx_len], 1)) {
-		// Remove non-printable characters from rx_data
-		if ((rx_data[rx_len] >= 'A' && rx_data[rx_len] <= 'Z') ||
-		    rx_data[rx_len] >= 'a' && rx_data[rx_len] <= 'z') {
+		// Copy non-alphanumeric characters from rx_data into clean_data
+		if (isalnum(rx_data[rx_len])) {
 			clean_data[rx_len] = rx_data[rx_len];
 			rx_len++;
 		}
@@ -29,11 +31,11 @@ static void uart_fifo_callback(const struct device *dev, void *user_data)
 		if (strncmp(clean_data, "SND", 3) == 0) {
 			printk("SND command received\n");
 			// Send to mesh
-			gen_msg_send(&clean_data[3]);
+			gen_msg_send(MSG_SND_COMM, &clean_data[3], (size_t)rx_len - 3);
 		} else if (strncmp(clean_data, "ADV", 3) == 0) {
 			printk("ADV command received\n");
 			// Advertise this node as a gateway
-			gen_msg_send(&clean_data[0]);
+			gen_msg_send(MSG_ADV_COMM, &clean_data[3], (size_t)rx_len - 3);
 		} else {
 			printk("Unknown command received\n");
 		}
