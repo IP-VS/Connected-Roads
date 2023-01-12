@@ -1,74 +1,91 @@
 #include "microphone.h"
+#include "printk.h"
 
-// ADC configuration
-BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
-	     "Console device is not ACM CDC UART device");
+#include <zephyr/drivers/i2s.h>
 
-BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(zephyr_user)) &&
-		     DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels),
-	     "No suitable device for ADC");
+#define I2S_RX_NODE DT_NODELABEL(i2s_rx)
 
-#define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define SAMPLE_FREQUENCY 44100
+#define SAMPLE_BIT_WIDHT 16
+#define BYTES_PER_SAMPLE sizeof(int16_t)
+#define NUMBER_OF_CHANNELS 2
+#define SAMPLES_PER_BLOCK ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
+#define BLOCK_SIZE (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
+#define BLOCK_COUNT 2
+#define TIMEOUT 1000
 
-/* Data of ADC io-channels specified in devicetree. */
-static const struct adc_dt_spec adc_channels[] = { DT_FOREACH_PROP_ELEM(
-	DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA) };
+K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
 
-void microphone_init(void)
-{
-	int err;
-	// int16_t buf;
-	int16_t buf2[256];
-	int16_t marker[5] = { 0, 0, 0, 0, 0 };
-	struct adc_sequence_options sequence_options = {
-		.interval_us = 100, // 10kHz
-		.extra_samplings = sizeof(buf2) / sizeof(int16_t) - 1,
-	};
-	struct adc_sequence sequence = {
-		.buffer = &buf2,
-		/* buffer size in bytes, not number of samples */
-		.buffer_size = sizeof(buf2),
-		.options = &sequence_options,
-	};
-	/* Configure channels individually prior to sampling. */
-	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
-		if (!device_is_ready(adc_channels[i].dev)) {
-			printk("ADC controller device not ready\n");
-			return;
-		}
+static bool configure_stream(const struct device* i2s_dev_rx, const struct i2s_config* config) {
+    int ret;
 
-		err = adc_channel_setup_dt(&adc_channels[i]);
-		if (err < 0) {
-			printk("Could not setup channel #%d (%d)\n", i, err);
-			return;
-		}
-	}
+    ret = i2s_configure(i2s_dev_rx, I2S_DIR_RX, config);
 
-	while (1) {
-		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
-			int32_t val_mv;
+    if (ret < 0) {
+        printk("Failed to configure RX stream: %d\n", ret);
+        return false;
+    }
 
-			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
+    return true;
+}
 
-			err = adc_read(adc_channels[i].dev, &sequence);
-			if (err < 0) {
-				// printk("Could not read (%d)\n", err);
-				continue;
-			} else {
-				printk_raw("micout: [\n"); // why is this not printing?
-				for (size_t s = 0U; s < ARRAY_SIZE(buf2); s++) {
-					if (s == ARRAY_SIZE(buf2) - 1) {
-						printk_raw("%" PRId16 "", buf2[s]);
-					} else {
-						printk_raw("%" PRId16 ",", buf2[s]);
-					}
-				}
-				printk_raw(" ]\n");
-				k_sleep(K_SECONDS(1));
+static bool trigger_command(const struct device* i2s_dev_rx, enum i2s_trigger_cmd cmd) {
+    int ret;
 
-				// uart_write(dev, marker, sizeof(marker));
-				// uart_write(dev, buf2, sizeof(buf2));
-			}
-		}
-	}
+    ret = i2s_trigger(i2s_dev_rx, I2S_DIR_RX, cmd);
+    if (ret < 0) {
+        printk("Failed to trigger command %d on RX: %d\n", cmd, ret);
+        return false;
+    }
+
+    return true;
+}
+
+static void process_block_data(void* mem_block, uint32_t number_of_samples) {
+    printk("g\n");
+    printk("%d\n", &((int16_t*)mem_block)[0]);
+}
+
+void start_i2s_sampling(void) {
+    const struct device* const i2s_dev_rx = DEVICE_DT_GET(I2S_RX_NODE);
+    struct i2s_config config;
+
+    if (!device_is_ready(i2s_dev_rx)) {
+        printk("I2S device is not ready\n", i2s_dev_rx->name);
+        return;
+    }
+    printk("a\n");
+    config.timeout = TIMEOUT;
+
+    if (!configure_stream(i2s_dev_rx, &config)) {
+        return;
+    }
+
+    for (;;) {
+        if (!trigger_command(i2s_dev_rx, I2S_TRIGGER_START)) {
+            return;
+        }
+
+        while (1) {
+            void* mem_block;
+            uint32_t block_size;
+            int ret;
+
+            printk("d\n");
+            ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);
+            printk("e\n");
+            if (ret < 0) {
+                printk("Failed to read data: %d\n", ret);
+                break;
+            }
+
+            printk("f\n");
+            process_block_data(&mem_block, SAMPLES_PER_BLOCK);
+            printk("h\n");
+        }
+
+        if (!trigger_command(i2s_dev_rx, I2S_TRIGGER_DROP)) {
+            return;
+        }
+    }
 }
