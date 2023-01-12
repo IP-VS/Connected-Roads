@@ -6,38 +6,40 @@ struct k_mutex mtx_write;
 
 #define FIFO_BUF_LEN 128
 static uint8_t rx_data[FIFO_BUF_LEN];
+static uint8_t clean_data[FIFO_BUF_LEN];
 static int rx_len = 0;
 
 // UART callback function to handle commands
 static void uart_fifo_callback(const struct device *dev, void *user_data)
 {
 	while (uart_fifo_read(dev, &rx_data[rx_len], 1)) {
-		if (rx_data[rx_len] == '\n') {
-			break;
+		// Remove non-printable characters from rx_data
+		if ((rx_data[rx_len] >= 'A' && rx_data[rx_len] <= 'Z') ||
+		    rx_data[rx_len] >= 'a' && rx_data[rx_len] <= 'z') {
+			clean_data[rx_len] = rx_data[rx_len];
+			rx_len++;
 		}
-		rx_len++;
 	}
-	// Remove last character
-	&rx_data[rx_len - 1] == '\0';
+	clean_data[rx_len] = '\0';
 
 	if (rx_len > 1) {
 		// Process the received data
-		printk("Received %d bytes: %s \n", rx_len, rx_data);
+		printk("Received %d bytes: %s \n", rx_len, clean_data);
 
-		if (strncmp(rx_data, "SND", 3) == 0) {
+		if (strncmp(clean_data, "SND", 3) == 0) {
 			printk("SND command received\n");
 			// Send to mesh
-			gen_msg_send(&rx_data[3]);
-		} else if (strncmp(rx_data, "ADV", 3) == 0) {
+			gen_msg_send(&clean_data[3]);
+		} else if (strncmp(clean_data, "ADV", 3) == 0) {
 			printk("ADV command received\n");
 			// Advertise this node as a gateway
-			gen_msg_send(&rx_data[0]);
+			gen_msg_send(&clean_data[0]);
 		} else {
 			printk("Unknown command received\n");
 		}
 		// Reset the buffer
 		rx_len = 0;
-		memset(&rx_data[0], 0, sizeof(rx_data));
+		memset(&clean_data[0], 0, sizeof(clean_data));
 	}
 }
 
