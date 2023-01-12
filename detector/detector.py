@@ -7,6 +7,12 @@ import collections
 import math
 import datetime
 
+import socket
+import struct
+import io
+
+import argparse
+
 
 class BackgroundFilter:
     def __init__(self, avg_factor=0.98, delay=100, detection_margin=1e-4, initial_background_level=2e-4):
@@ -158,34 +164,68 @@ def decision(events, n_thr=100, i_thr=5e-4, s_thr=0.2):
     return final_events
 
 
-timestamp = '20190702T030000'
-path_signal = f'./testfiles/{timestamp}Z_400_4000.npy'
-path_reference = f'./testfiles/gt/{timestamp}.txt'
-startdate = datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S') + datetime.timedelta(hours=2)
 
-raw = np.load(path_signal)
-raw[1] = -raw[1] # y-axis microphone faced away from street
+argparser = argparse.ArgumentParser()
+argparser.add_argument('--addr', type=str, required=False, default='0.0.0.0')
+argparser.add_argument('--port', type=int, required=True)
 
+args = argparser.parse_args()
+
+
+# big endian
+# int32 left channel
+# int32 right channel
+# int64 time
+MSG_FORMAT = '>iiq'
+
+unpacker = struct.Struct(MSG_FORMAT)
+msg_buffer = io.BytesIO()
 
 ed = EventDetector()
 i = 0
 
-while i < len(raw[2]):
-    values = ed.next(raw[2][i], raw[1][i])
-    i += 1
-    if values:
-        event_group = [event for event in subevents(((i-1-len(values[0]), i-1), values[0], values[1], values[2], values[3]))]
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind((args.addr, args.port))
+sock.listen()
 
-        feats = []
-        for event in event_group:
-            pos, vel = position_velocity(event[2], event[3])
-            feats.append(features((event[0], event[1], pos, vel, event[4])))
-            
-        if len(feats) < 1:
-            continue
+# TODO error handling
+# TODO handle re-connects
+conn, addr = sock.accept()
+
+bytes_read = 0
+while True:
+    bytes_expected = unpacker.size - bytes_read
+
+    if bytes_expected > 0:
+        data = conn.recv(bytes_expected)
+        msg_buffer.write(data)
+        bytes_read += len(data)
+
+    if bytes_read >= unpacker.size:
+        msg_buffer.seek(0)
+        unpacked_data = unpacker.unpack(msg_buffer.read(unpacker.size))
+
+        msg_buffer.seek(0)
+        bytes_read = 0
+
         
-        for event in decision(feats):
-            print(event[0])
-            print(event[1])
-            print(event[2])
-            print()
+        left, right, time = unpacked_data
+
+        values = ed.next(left, right)
+        i += 1
+        if values:
+            event_group = [event for event in subevents(((i-1-len(values[0]), i-1), values[0], values[1], values[2], values[3]))]
+    
+            feats = []
+            for event in event_group:
+                pos, vel = position_velocity(event[2], event[3])
+                feats.append(features((event[0], event[1], pos, vel, event[4])))
+                
+            if len(feats) < 1:
+                continue
+            
+            for event in decision(feats):
+                print(event[0])
+                print(event[1])
+                print(event[2])
+                print()

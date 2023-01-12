@@ -85,3 +85,28 @@ Mittels folgendem Befehl kann der Audio-Input ausgelesen werden:
     west build -b nrf52840dongle_nrf52840 .
 
 Wieder mit nRF Programmer Tool flashen und anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden.
+
+### Auswertung
+
+Das Auswertungsskript startet einen TCP-Server und wartet auf Messdaten im folgenden Format (big endian):
+
+```
+int32: left channel
+int32: right channel
+int64: timestamp
+```
+
+Sobald ein Ereignis erkannt wurde erfolgt eine Ausgabe in stdout.
+
+Der entsprechende Container kann folgendermaßen gebaut werden:
+
+```
+git checkout auswertung
+cd detector
+podman build -t detector .
+```
+
+Ausführung z.B. mit:
+```
+podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
+```
