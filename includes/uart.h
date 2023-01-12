@@ -49,12 +49,12 @@
 /*
  * Wait for the uart device to connect and for uart to be ready.
  */
-void uart_init(const struct device* uart_dev);
+void uart_init(const struct device *uart_dev);
 
 /*
  * Write the buffer to the output uart device.
  */
-void uart_write(const struct device* uart_dev, const char* buf, size_t len);
+void uart_write(const struct device *uart_dev, const char *buf, size_t len);
 
 /*
  * Write the string to the output uart device.
@@ -67,7 +67,7 @@ void uart_write(const struct device* uart_dev, const char* buf, size_t len);
  * Returns false if the buffer was exhausted before reading the
  * specified character.
  */
-bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char stop);
+bool uart_read_until(const struct device *uart_dev, char *buf, size_t len, char stop);
 
 /*
  * Read from uart device until a newline character was read or the buffer was exhausted.
@@ -78,5 +78,5 @@ bool uart_read_until(const struct device* uart_dev, char* buf, size_t len, char 
 /*
  * Read from uart device until buffer is full.
  */
-void uart_read(const struct device* uart_dev, char* buf, size_t len);
+void uart_read(const struct device *uart_dev, char *buf, size_t len);
 #endif // UART_H

@@ -8,13 +8,14 @@
 #include "printk.h"
 
 static uint8_t dev_uuid[16];
+static size_t dev_uuid_size = 0;
 
 static struct k_timer timer;
 static void timer_callback(struct k_timer* timer) {
-    char buf[sizeof(dev_uuid)*2+1];
+    char buf[dev_uuid_size * 2 + 1];
     // Add uuid to msg
     char* iter = buf;
-    for (size_t i = 0; i < sizeof(dev_uuid); ++i) {
+    for (size_t i = 0; i < dev_uuid_size; ++i) {
         sprintf(iter, "%02x", dev_uuid[i]);
         iter += 2;
     }
@@ -26,14 +27,15 @@ static void timer_callback(struct k_timer* timer) {
 }
 
 void heartbeat_init(uint8_t sleeptime) {
-    int err;
     if (IS_ENABLED(CONFIG_HWINFO)) {
-        err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
-    }
-
-    if (err < 0) {
-        dev_uuid[0] = 0xdd;
-        dev_uuid[1] = 0xdd;
+        int size = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
+        if (size < 0) {
+            dev_uuid[0] = 0xdd;
+            dev_uuid[1] = 0xdd;
+            dev_uuid_size = 2;
+        } else {
+            dev_uuid_size = size;
+        }
     }
     k_timer_init(&timer, timer_callback, NULL);
     k_timer_start(&timer, K_SECONDS(sleeptime), K_SECONDS(sleeptime));

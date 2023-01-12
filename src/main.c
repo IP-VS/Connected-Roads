@@ -38,8 +38,6 @@ void main(void) {
         heartbeat_init(5);
     }
 
-    printk("Main reached end :)\r\n");
-
     // Mic stuff
     // while (1) {
     //     k_sleep(K_SECONDS(1));
