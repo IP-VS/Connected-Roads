@@ -36,6 +36,8 @@ Ist die Entwicklungsumgebung erfolgreich aufgesetzt, muss das Projekt gebuilded 
     git checkout server
     west build -b nrf52840dongle_nrf52840 .
 
+**Oder** es kann direkt ein Release von der [Release Seite](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) benutzt werden. Diese .hex Datei dann einfach im nRF Programmer auswählen und flashen.
+
 Danach kann einer der Dongles angeschlossen werden und über das nRF Programmer Tool aus der nRF Connect Toolbox geflashed werden. Alle Knoten benutzen den selben Build.
 
 
