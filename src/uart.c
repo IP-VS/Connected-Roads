@@ -30,7 +30,7 @@ static void uart_fifo_callback(const struct device* dev, void* user_data) {
         if (strncmp(clean_data, "SND", 3) == 0) {
             printk("SND command received\n");
             // Send to mesh
-            gen_msg_send(MSG_SND_COMM, &clean_data[3], (size_t)rx_len - 3);
+            gen_msg_send(MSG_SND_COMM, &clean_data[3], (size_t)rx_len - 3 + 1);
         } else if (strncmp(clean_data, "ADV", 3) == 0) {
             printk("ADV command received\n");
             // Advertise this node as a gateway
