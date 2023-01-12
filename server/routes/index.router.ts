@@ -25,6 +25,7 @@ wsServer.on('connection', socket => {
       // Device status
       if (connected) {
         socket.send('device:Connected');
+        serialport.write('ADV\n');
       } else {
         socket.send('device:Disconnected');
       }
@@ -38,16 +39,6 @@ wsServer.on('connection', socket => {
     } else if (message.toString('utf8').indexOf('SND') > -1) {
       var msg = message.toString('utf8').split('SND')[1];
       serialport.write('SND' + msg);
-      // Wait 2 seconds
-      setTimeout(() => {
-
-        serialport.flush();
-        setTimeout(() => {
-
-          serialport.resume();
-        }, 2000);
-      }, 2000);
-
     }
   });
 });
