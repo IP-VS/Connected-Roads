@@ -70,11 +70,16 @@ Nach Starten und Auswählen des korrekten Ports, werden die verbundenen Nodes in
 
 ### Mikrofone 
 
-Diese können an die Pins P0.02 und P0.29 angeschlossen werden. (das kann in der app.overlay Datei definiert werden)
+Das Auslesen der I2S-Mikrofone funktioniert derzeit nicht.
+
+Der 2-Kanal I2S Schnittstelle sind folgende Ports zugewiesen:
+- SCK: P0.29
+- LRCK: P1.15
+- SDIN: P0.02
 
 Mittels folgendem Befehl kann der Audio-Input ausgelesen werden:
 
-    git checkout microphone-send
+    git checkout microphone-i2s
     west build -b nrf52840dongle_nrf52840 .
 
 Wieder mit nRF Programmer Tool flashen und anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden.
