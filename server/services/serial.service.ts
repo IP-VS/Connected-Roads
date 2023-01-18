@@ -131,23 +131,21 @@ function initSerial(wsServer: ws.Server) {
             });
         }
         // Microphone data
-        // TODO: change uart data format
-        else if (RegExp(/^\s*\d*,\d+,\d+/).test(dataStr.replace(/[^0-9,]/g, ''))) {
+        else if (dataStr.indexOf('micdata') > -1) {
             dataStr = dataStr.replace(/[^0-9,]/g, '');
-            // 32-bit integer left channel
-            var leftChannel = new Int32Array(1);
-            // 32-bit integer right channel
-            var rightChannel = new Int32Array(1);
-            // 64-bit integer timestamp
-            var timestamp = new BigInt64Array(1);
-
             // connect to tcp socket and send data
             var net = require('net');
             var client = new net.Socket();
             // localhost:1234
+            // 128 byte buffer
+            var buffer = Buffer.alloc(128);
+            // send data to tcp socket
             client.connect(1234, '127.0.0.1', function () {
                 console.log('Connected');
-                client.write('' + leftChannel + rightChannel + timestamp);
+                buffer.writeInt32BE(parseInt(dataStr.split(',')[0]), 0);
+                buffer.writeInt32BE(parseInt(dataStr.split(',')[1]), 0);
+                buffer.writeBigInt64BE(BigInt(dataStr.split(',')[2]), 0);
+                client.write(buffer);
             });
             wsServer.clients.forEach(client => {
                 client.send('micdata:' + dataStr);
