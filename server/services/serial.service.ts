@@ -131,13 +131,30 @@ function initSerial(wsServer: ws.Server) {
             });
         }
         // Microphone data
+        // TODO: change uart data format
         else if (RegExp(/^\s*\d*,\d+,\d+/).test(dataStr.replace(/[^0-9,]/g, ''))) {
             dataStr = dataStr.replace(/[^0-9,]/g, '');
+            // 32-bit integer left channel
+            var leftChannel = new Int32Array(1);
+            // 32-bit integer right channel
+            var rightChannel = new Int32Array(1);
+            // 64-bit integer timestamp
+            var timestamp = new BigInt64Array(1);
+
+            // connect to tcp socket and send data
+            var net = require('net');
+            var client = new net.Socket();
+            // localhost:1234
+            client.connect(1234, '127.0.0.1', function () {
+                console.log('Connected');
+                client.write('' + leftChannel + rightChannel + timestamp);
+            });
             wsServer.clients.forEach(client => {
                 client.send('micdata:' + dataStr);
             });
         }
     });
+
     // function testNode(num: number) {
     //     // Get Node name
     //     var nodeName = 'Node 0x000'+num;
