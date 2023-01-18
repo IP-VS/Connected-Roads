@@ -42,7 +42,6 @@ static bool trigger_command(const struct device* i2s_dev_rx, enum i2s_trigger_cm
 }
 
 static void process_block_data(void* mem_block, uint32_t number_of_samples) {
-    printk("g\n");
     printk("%d\n", &((int16_t*)mem_block)[0]);
 }
 
@@ -54,7 +53,14 @@ void start_i2s_sampling(void) {
         printk("I2S device is not ready\n", i2s_dev_rx->name);
         return;
     }
-    printk("a\n");
+
+    config.word_size = SAMPLE_BIT_WIDHT;
+    config.channels = NUMBER_OF_CHANNELS;
+    config.format = I2S_FMT_DATA_FORMAT_I2S;
+    config.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER;
+    config.frame_clk_freq = SAMPLE_FREQUENCY;
+    config.mem_slab = &mem_slab;
+    config.block_size = BLOCK_SIZE;
     config.timeout = TIMEOUT;
 
     if (!configure_stream(i2s_dev_rx, &config)) {
@@ -71,17 +77,13 @@ void start_i2s_sampling(void) {
             uint32_t block_size;
             int ret;
 
-            printk("d\n");
             ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);
-            printk("e\n");
             if (ret < 0) {
                 printk("Failed to read data: %d\n", ret);
                 break;
             }
 
-            printk("f\n");
             process_block_data(&mem_block, SAMPLES_PER_BLOCK);
-            printk("h\n");
         }
 
         if (!trigger_command(i2s_dev_rx, I2S_TRIGGER_DROP)) {
