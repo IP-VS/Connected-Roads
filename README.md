@@ -31,17 +31,41 @@ Für detailierte Installationsanleitungen der Entwicklungsumgebung siehe [Gettin
 
 Ist die Entwicklungsumgebung erfolgreich aufgesetzt, muss das Projekt gebuilded werden:
 
-
     git clone https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen.git
     git checkout server
     west build -b nrf52840dongle_nrf52840 .
+
+### Auswertung
+
+Das Auswertungsskript startet einen TCP-Server und wartet auf Messdaten im folgenden Format (big endian):
+
+```
+int32: left channel
+int32: right channel
+int64: timestamp
+```
+
+Sobald ein Ereignis erkannt wurde erfolgt eine Ausgabe in stdout.
+
+Der entsprechende Container kann folgendermaßen gebaut werden:
+
+```
+git checkout auswertung
+cd detector
+podman build -t detector .
+```
+
+Ausführung z.B. mit:
+
+```
+podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
+```
 
 **Oder** es kann direkt ein Release von der [Release Seite](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) benutzt werden. Diese .hex Datei dann einfach im nRF Programmer auswählen und flashen.
 
 Danach kann einer der Dongles angeschlossen werden und über das nRF Programmer Tool aus der nRF Connect Toolbox geflashed werden. Alle Knoten benutzen den selben Build.
 
-
-Anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden. Wenn nun der Button auf den Dongles innerhalb der ersten 5 Sekunden gedrückt wird, konfiguriert das Gerät sich als Provisioner, sodass es das Mesh Netzwerk verwaltet. Ansonsten wird es als Node konfiguriert und dem Mesh Netzwerk beigetreten. Sollte der Button nach den 5 Sekunden gedrückt werden und das Dongle ist noch nicht provisioniert wurden, provisioniert es sich selber mit Test-IDs. 
+Anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden. Wenn nun der Button auf den Dongles innerhalb der ersten 5 Sekunden gedrückt wird, konfiguriert das Gerät sich als Provisioner, sodass es das Mesh Netzwerk verwaltet. Ansonsten wird es als Node konfiguriert und dem Mesh Netzwerk beigetreten. Sollte der Button nach den 5 Sekunden gedrückt werden und das Dongle ist noch nicht provisioniert wurden, provisioniert es sich selber mit Test-IDs.
 
 Wenn nach erfolgreicher Provisionierung der Button gedrückt wird, sendet der Knoten eine Test Nachricht an das Mesh Netzwerk.
 
@@ -70,11 +94,12 @@ Hierbei ist besonders SERIAL_PORT relevant, da dieser je nach Port, Gerät unter
 
 Nach Starten und Auswählen des korrekten Ports, werden die verbundenen Nodes in der Übersicht angezeigt, sowie auch deren Status. Mittels der `Send command` Box können Textnachrichten an die Nodes gesendet werden.
 
-### Mikrofone 
+### Mikrofone
 
 Das Auslesen der I2S-Mikrofone funktioniert derzeit nicht.
 
 Der 2-Kanal I2S Schnittstelle sind folgende Ports zugewiesen:
+
 - SCK: P0.29
 - LRCK: P1.15
 - SDIN: P0.02
@@ -85,28 +110,3 @@ Mittels folgendem Befehl kann der Audio-Input ausgelesen werden:
     west build -b nrf52840dongle_nrf52840 .
 
 Wieder mit nRF Programmer Tool flashen und anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden.
-
-### Auswertung
-
-Das Auswertungsskript startet einen TCP-Server und wartet auf Messdaten im folgenden Format (big endian):
-
-```
-int32: left channel
-int32: right channel
-int64: timestamp
-```
-
-Sobald ein Ereignis erkannt wurde erfolgt eine Ausgabe in stdout.
-
-Der entsprechende Container kann folgendermaßen gebaut werden:
-
-```
-git checkout auswertung
-cd detector
-podman build -t detector .
-```
-
-Ausführung z.B. mit:
-```
-podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
-```
