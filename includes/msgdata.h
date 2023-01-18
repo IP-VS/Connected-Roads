@@ -30,6 +30,7 @@ enum msg_type {
     MSG_SND_COMM = 's',
     MSG_ADV_COMM = 'a',
     MSG_MIC_DATA = 'm',
+    MSG_UPTIME = 'u',
 };
 
 // Broadcasts a message to the mesh.
