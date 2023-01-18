@@ -5,16 +5,16 @@
 
 #define I2S_RX_NODE DT_NODELABEL(i2s_rx)
 
-#define SAMPLE_FREQUENCY 44100
-#define SAMPLE_BIT_WIDHT 24
+#define SAMPLE_FREQUENCY 32000
+#define SAMPLE_BIT_WIDTH 24
 #define BYTES_PER_SAMPLE sizeof(int32_t)
+#define SAMPLES_PER_CH_PER_FRAME 128
 #define NUMBER_OF_CHANNELS 2
-#define SAMPLES_PER_BLOCK ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
-#define BLOCK_SIZE (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
-#define BLOCK_COUNT 2
+#define SAMPLES_PER_FRAME (SAMPLES_PER_CH_PER_FRAME * NUMBER_OF_CHANNELS)
+#define BYTES_PER_FRAME (SAMPLES_PER_FRAME * BYTES_PER_SAMPLE)
 #define TIMEOUT 1000
 
-K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+K_MEM_SLAB_DEFINE_STATIC(mem_slab, BYTES_PER_FRAME, 2, 4);
 
 static bool configure_stream(const struct device* i2s_dev_rx, const struct i2s_config* config) {
     int ret;
@@ -56,13 +56,13 @@ void start_i2s_sampling(void) {
         return;
     }
 
-    config.word_size = SAMPLE_BIT_WIDHT;
+    config.word_size = SAMPLE_BIT_WIDTH;
     config.channels = NUMBER_OF_CHANNELS;
     config.format = I2S_FMT_DATA_FORMAT_I2S;
     config.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER;
     config.frame_clk_freq = SAMPLE_FREQUENCY;
     config.mem_slab = &mem_slab;
-    config.block_size = BLOCK_SIZE;
+    config.block_size = BYTES_PER_FRAME;
     config.timeout = TIMEOUT;
 
     if (!configure_stream(i2s_dev_rx, &config)) {
@@ -78,14 +78,14 @@ void start_i2s_sampling(void) {
             void* mem_block;
             uint32_t block_size;
             int ret;
-    
+
             ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);
             if (ret < 0) {
                 printk("Failed to read data: %d\n", ret);
                 break;
             }
 
-            process_block_data(&mem_block, SAMPLES_PER_BLOCK);
+            process_block_data(&mem_block, SAMPLES_PER_FRAME);
         }
 
         // if (!trigger_command(i2s_dev_rx, I2S_TRIGGER_STOP)) {
