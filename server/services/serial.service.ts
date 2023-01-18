@@ -142,9 +142,12 @@ function initSerial(wsServer: ws.Server) {
             // send data to tcp socket
             client.connect(1234, '127.0.0.1', function () {
                 console.log('Connected');
-                buffer.writeInt32BE(parseInt(dataStr.split(',')[0]), 0);
-                buffer.writeInt32BE(parseInt(dataStr.split(',')[1]), 0);
-                buffer.writeBigInt64BE(BigInt(dataStr.split(',')[2]), 0);
+                var tmpData0 = parseInt(dataStr.split(',')[0].replace(/[^0-9]/g, ''));
+                buffer.writeInt32BE(tmpData0, 0);
+                var tmpData1 = parseInt(dataStr.split(',')[1].replace(/[^0-9]/g, ''));
+                buffer.writeInt32BE(tmpData1, 0);
+                var tmpData2 = BigInt(dataStr.split(',')[2].replace(/[^0-9]/g, ''));
+                buffer.writeBigInt64BE(tmpData2, 0);
                 client.write(buffer);
             });
             wsServer.clients.forEach(client => {
