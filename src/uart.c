@@ -36,6 +36,10 @@ static void uart_fifo_callback(const struct device* dev, void* user_data) {
             // Advertise this node as a gateway
             int len = sprintf(&clean_data[3], "%d", primary_addr);
             gen_msg_send(MSG_ADV_COMM, &clean_data[3], (size_t)len + 1);
+        } else if (strncmp(clean_data, "UPT", 3) == 0) {
+            printk("UPT command received\n");
+            // Send uptime command
+            gen_msg_send(MSG_UPTIME, &clean_data[0], (size_t)rx_len + 1);
         } else {
             printk("Unknown command received\n");
         }

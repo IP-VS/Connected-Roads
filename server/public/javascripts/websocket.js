@@ -35,7 +35,7 @@ var socketListener = function () {
         // Device status
         if (msg.startsWith('device:')) {
             var deviceStatus = msg.split(':')[1];
-            log('Device status changed: ' + deviceStatus);
+            // log('Device status changed: ' + deviceStatus);
             document.getElementById('deviceconnection').innerText = 'Device: ' + deviceStatus;
         }
         // Node status
@@ -51,6 +51,10 @@ var socketListener = function () {
         if (msg.startsWith('micdata_detector:')) {
             log('Detector data received: ' + msg.replace(/[^0-9,]/g, ''));
         }
+        // Uptime message
+        if (msg.startsWith('uptime:')) {
+            log(msg);
+        }
 
         // Received node list parse from json string
         try {
@@ -62,7 +66,7 @@ var socketListener = function () {
                 var node = nodes[i];
                 // Add node to list
                 const nodeName = node.name; // Node_1
-                log('Node Heartbeat: ' + nodeName);
+                // log('Node Heartbeat: ' + nodeName);
                 const nodeStatus = node.status;
                 var buttonElement = document.createElement('button');
                 buttonElement.innerText = 'Remove';
@@ -130,5 +134,10 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Send: ' + msg);
         socket.send("SND" + msg);
         document.getElementById('cmdinput').value = '';
+    });
+    // Refresh button
+    document.getElementById('addnode').addEventListener('click', function (event) {
+        console.log('Send UPT');
+        socket.send('UPT');
     });
 });

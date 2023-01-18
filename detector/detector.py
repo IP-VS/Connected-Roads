@@ -191,13 +191,14 @@ sock.listen()
 # socket clients
 clients = []
 
-# TODO error handling
-# TODO handle re-connects
-conn, addr = sock.accept()
-clients.append(conn)
-
-bytes_read = 0
 while True:
+    # TODO error handling
+    # TODO handle re-connects
+    conn, addr = sock.accept()
+    clients.append(conn)
+
+    bytes_read = 0
+    
     bytes_expected = unpacker.size - bytes_read
 
     if bytes_expected > 0:
