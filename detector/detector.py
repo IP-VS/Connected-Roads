@@ -188,9 +188,13 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind((args.addr, args.port))
 sock.listen()
 
+# socket clients
+clients = []
+
 # TODO error handling
 # TODO handle re-connects
 conn, addr = sock.accept()
+clients.append(conn)
 
 bytes_read = 0
 while True:
@@ -205,11 +209,17 @@ while True:
         msg_buffer.seek(0)
         unpacked_data = unpacker.unpack(msg_buffer.read(unpacker.size))
 
+        # print msg buffer
+        #print(unpacked_data)
+
         msg_buffer.seek(0)
         bytes_read = 0
 
         
         left, right, time = unpacked_data
+        
+        left = left / 1000000
+        right = right / 1000000
 
         values = ed.next(left, right)
         i += 1
@@ -225,7 +235,11 @@ while True:
                 continue
             
             for event in decision(feats):
-                print(event[0])
-                print(event[1])
-                print(event[2])
+                print(event[0]) # index of first sample
+                print(event[1]) # index of last sample
+                print(event[2]) # velocity
                 print()
+                # send velocity to server
+                for client in clients:
+                    client.send(bytes(str(event[2]), encoding='utf-8'))
+                

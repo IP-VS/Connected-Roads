@@ -44,12 +44,12 @@ var socketListener = function () {
             log('Node status changed: ' + nodeStatus);
         }
         // Microphone data
-        if (msg.startsWith('micdata:')) {
-            // if (msg.split[','].length < 10) {
-            //     // Not enough data to plot
-            //     return;
-            // }
+        if (msg.startsWith('micdata_raw:')) {
             log('Microphone data received: ' + msg.replace(/[^0-9,]/g, ''));
+        }
+        // Detector data
+        if (msg.startsWith('micdata_detector:')) {
+            log('Detector data received: ' + msg.replace(/[^0-9,]/g, ''));
         }
 
         // Received node list parse from json string
