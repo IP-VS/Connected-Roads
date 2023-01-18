@@ -16,6 +16,7 @@ target_sources(app PRIVATE
     src/board.c
     src/heartbeat.c
     src/msgdata.c
-    src/microphone.c)
+    src/microphone.c
+    src/datastructures.c)
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/includes)

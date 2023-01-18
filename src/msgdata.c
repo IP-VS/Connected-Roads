@@ -1,5 +1,9 @@
 #include "msgdata.h"
+#include "datastructures.h"
+#include "uart.h"
+#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <zephyr/net/buf.h>
 
 #define OP_ONOFF_GET BT_MESH_MODEL_OP_2(0x82, 0x01)
@@ -14,6 +18,9 @@ unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 static struct k_sem prov_sem;
 static struct bt_mesh_model models[];
 static bool configured = false;
+
+#define MICDATA_STR_LEN 2048
+static char* micdata_str[MICDATA_STR_LEN];
 
 // Node added cb (provisioning complete and configured)
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
@@ -123,6 +130,34 @@ static int gen_msg_generic(struct bt_mesh_model* model,
         break;
     case MSG_SND_COMM:
         printk("bt: got SND message: '%s'\n", msg_buf);
+        break;
+    case MSG_MIC_DATA:
+        // don't print, because it's binary! :)
+        printk("bt: got MIC message (binary)\n");
+        struct Samples samples;
+        if (!samples_deserialize(msg_buf, (size_t)len, &samples)) {
+            printk("Failed to deserialize samples from MSG_MIC_DATA!\n");
+        } else {
+            printk("bt: MIC message contains %u samples\n", samples.n_samples);
+            memset(micdata_str, 0, MICDATA_STR_LEN);
+            char* ptr = micdata_str;
+            ptr += sprintf(ptr, "micdata:");
+            for (size_t i = 0; i < samples.n_samples; ++i) {
+                ptr += sprintf(ptr, "%d,%d,%lld,",
+                    samples.samples[i].channels[0],
+                    samples.samples[i].channels[1],
+                    samples.samples[i].time);
+                if (ptr > micdata_str + MICDATA_STR_LEN) {
+                    // If you get this, try increasing the MICDATA_STR_LEN, or send twice (in chunks)
+                    printk("Ran out of memory for micdata!\n");
+                    return -ENOMEM;
+                }
+            }
+            // Write the data to the uart
+            uart_write_str(dev, (const char*)micdata_str);
+            // make sure it looks pretty
+            uart_write_str(dev, "\n");
+        }
         break;
     case MSG_ADV_COMM:
         printk("bt: got ADV message: '%s'\n", msg_buf);
@@ -286,6 +321,15 @@ int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
         printk("Error: bt_mesh_model_send failed: err=%d\n", err);
     }
     return err;
+}
+
+int mic_msg_send(const struct Samples* samples) {
+    uint8_t buf[SAMPLES_SERIALIZE_BUFFER_SIZE];
+    if (!samples_serialize(buf, sizeof(buf), samples)) {
+        printk("Failed to serialize samples!\n");
+        return -1;
+    }
+    return gen_msg_send(MSG_MIC_DATA, buf, sizeof(buf));
 }
 
 static void button_pressed(struct k_work* work) {
