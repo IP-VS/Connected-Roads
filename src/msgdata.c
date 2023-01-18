@@ -18,7 +18,6 @@ unsigned int recv_addr = BT_MESH_ADDR_ALL_NODES;
 static struct k_sem prov_sem;
 static struct bt_mesh_model models[];
 static bool configured = false;
-static uint32_t uptime;
 
 #define MICDATA_STR_LEN 2048
 static char* micdata_str[MICDATA_STR_LEN];
@@ -134,9 +133,6 @@ static int gen_msg_generic(struct bt_mesh_model* model,
         break;
     case MSG_UPTIME:
         printk("bt: got uptime message: '%s'\n", msg_buf);
-        // Send uptime to the gateway
-        uptime = k_uptime_get_32();
-        gen_msg_send(MSG_UPTIME, (uint8_t*)&uptime, sizeof(uptime));
         break;
     case MSG_MIC_DATA:
         // don't print, because it's binary! :)
@@ -444,9 +440,6 @@ void msgdata_init(void) {
     if (err) {
         printk("Bluetooth init failed (err %d)\n", err);
     }
-
-    // Set uptime
-    uptime = k_uptime_get_32();
 
     // Initialize work queue
     // k_work_init(&send_msg_from_uart_work, send_msg_from_uart);
