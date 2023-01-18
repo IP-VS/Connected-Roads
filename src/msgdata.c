@@ -124,6 +124,11 @@ static int gen_msg_generic(struct bt_mesh_model* model,
     case MSG_SND_COMM:
         printk("bt: got SND message: '%s'\n", msg_buf);
         break;
+    case MSG_MIC_DATA:
+        printk("bt: got MIC message: '%s'\n", msg_buf);
+        // Write the data to the uart
+        printk("micdata: %s\n", msg_buf);
+        break;
     case MSG_ADV_COMM:
         printk("bt: got ADV message: '%s'\n", msg_buf);
         int adv_addr = atoi(msg_buf);
