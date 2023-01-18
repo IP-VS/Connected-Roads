@@ -26,32 +26,39 @@ void main(void) {
     uart_init(dev);
     dev_uuid_init();
 
-    printk("Startup \r\n");
+    start_i2s_sampling();
 
-    printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
-    if (wait_for_button_press(5)) {
-        provision();
-        printk("Done provisioning\r\n");
-    } else {
-        msgdata_init();
-        // Heartbeat init AFTER msgdata init
-        heartbeat_init(5);
+    // printk("Startup \r\n");
+
+    // printk("Press button 1 within 5 seconds to make this node a provisioner\r\n");
+    // if (wait_for_button_press(5)) {
+    //     provision();
+    //     printk("Done provisioning\r\n");
+    // } else {
+    //     msgdata_init();
+    //     // Heartbeat init AFTER msgdata init
+    //     heartbeat_init(5);
+    // }
+
+    // printk("Main reached end :)\r\n");
+
+    // // Mic stuff
+    // // while (1) {
+    // //     k_sleep(K_SECONDS(1));
+    // //     if (bt_mesh_is_provisioned()) {
+    // //         printk("Node is provisioned!\r\n");
+    // //         printk("Mic Init \r\n");
+    // //         microphone_init();
+    // //         break;
+    // //     }
+    // // }
+    // // printk("Ready to do work!\r\n");
+    // // while (1) {
+    // //     k_sleep(K_SECONDS(1));
+    // // }
+
+    printk("done\n");
+    while (1) {
+        k_sleep(K_SECONDS(1));
     }
-
-    printk("Main reached end :)\r\n");
-
-    // Mic stuff
-    // while (1) {
-    //     k_sleep(K_SECONDS(1));
-    //     if (bt_mesh_is_provisioned()) {
-    //         printk("Node is provisioned!\r\n");
-    //         printk("Mic Init \r\n");
-    //         microphone_init();
-    //         break;
-    //     }
-    // }
-    // printk("Ready to do work!\r\n");
-    // while (1) {
-    //     k_sleep(K_SECONDS(1));
-    // }
 }
