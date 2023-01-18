@@ -39,6 +39,8 @@ wsServer.on('connection', socket => {
     } else if (message.toString('utf8').indexOf('SND') > -1) {
       var msg = message.toString('utf8').split('SND')[1];
       serialport.write('SND' + msg);
+    } else if (message.toString('utf8').indexOf('UPT') > -1) {
+      serialport.write('UPT\r\n');
     }
   });
 });
