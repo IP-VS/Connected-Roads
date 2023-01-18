@@ -162,7 +162,6 @@ function initSerial(wsServer: ws.Server) {
             buffer.writeBigInt64BE(tmpData2, 0);
             detectorClient.write(buffer);
 
-
             wsServer.clients.forEach(client => {
                 client.send('micdata_raw:' + dataStr);
             });
