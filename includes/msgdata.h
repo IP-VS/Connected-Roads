@@ -15,8 +15,8 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "board.h"
-#include "printk.h"
 #include "datastructures.h"
+#include "printk.h"
 
 /* Receiver */
 extern unsigned int recv_addr;
@@ -31,6 +31,7 @@ enum msg_type {
     MSG_ADV_COMM = 'a',
     MSG_MIC_DATA = 'm',
     MSG_UPTIME = 'u',
+    MSG_UPTIME_ACK = 'k',
 };
 
 // Broadcasts a message to the mesh.

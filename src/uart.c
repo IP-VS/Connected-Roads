@@ -11,7 +11,6 @@ struct k_mutex mtx_write;
 static uint8_t rx_data[FIFO_BUF_LEN];
 static uint8_t clean_data[FIFO_BUF_LEN];
 static int rx_len = 0;
-static uint32_t uptime;
 
 // UART callback function to handle commands
 static void uart_fifo_callback(const struct device* dev, void* user_data) {
@@ -39,11 +38,8 @@ static void uart_fifo_callback(const struct device* dev, void* user_data) {
             gen_msg_send(MSG_ADV_COMM, &clean_data[3], (size_t)len + 1);
         } else if (strncmp(clean_data, "UPT", 3) == 0) {
             printk("UPT command received\n");
-            // Advertise this node as a gateway
-            int len = sprintf(&clean_data[3], "%d", primary_addr);
-            // Send uptime to the gateway
-            uptime = k_uptime_get_32();
-            gen_msg_send(MSG_UPTIME, (uint8_t*)&uptime, (size_t)uptime);
+            // Send uptime command
+            gen_msg_send(MSG_UPTIME, &clean_data[0], (size_t)rx_len + 1);
         } else {
             printk("Unknown command received\n");
         }
@@ -62,8 +58,6 @@ void uart_init(const struct device* uart_dev) {
     uart_irq_callback_set(uart_dev, uart_fifo_callback);
     uart_irq_rx_enable(uart_dev);
     printk("Set UART FIFO cb. Ready to receive data...");
-    // Set uptime
-    uptime = k_uptime_get_32();
 
     k_mutex_init(&mtx_read);
     k_mutex_init(&mtx_write);
