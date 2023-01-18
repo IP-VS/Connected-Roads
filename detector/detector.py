@@ -209,11 +209,17 @@ while True:
         msg_buffer.seek(0)
         unpacked_data = unpacker.unpack(msg_buffer.read(unpacker.size))
 
+        # print msg buffer
+        #print(unpacked_data)
+
         msg_buffer.seek(0)
         bytes_read = 0
 
         
         left, right, time = unpacked_data
+        
+        left = left / 1000000
+        right = right / 1000000
 
         values = ed.next(left, right)
         i += 1
@@ -235,5 +241,5 @@ while True:
                 print()
                 # send velocity to server
                 for client in clients:
-                    client.send(event[2].encode())
+                    client.send(bytes(str(event[2]), encoding='utf-8'))
                 
