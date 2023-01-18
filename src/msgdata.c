@@ -1,4 +1,5 @@
 #include "msgdata.h"
+#include "datastructures.h"
 #include <stdint.h>
 #include <zephyr/net/buf.h>
 
@@ -291,6 +292,15 @@ int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
         printk("Error: bt_mesh_model_send failed: err=%d\n", err);
     }
     return err;
+}
+
+int mic_msg_send(const struct Samples* samples) {
+    uint8_t buf[SAMPLES_SERIALIZE_BUFFER_SIZE];
+    if (!samples_serialize(buf, sizeof(buf), samples)) {
+        printk("Failed to serialize samples!\n");
+        return -1;
+    }
+    return gen_msg_send(MSG_MIC_DATA, buf, sizeof(buf));
 }
 
 static void button_pressed(struct k_work* work) {

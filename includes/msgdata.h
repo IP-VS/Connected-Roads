@@ -16,6 +16,7 @@
 
 #include "board.h"
 #include "printk.h"
+#include "datastructures.h"
 
 /* Receiver */
 extern unsigned int recv_addr;
@@ -33,6 +34,10 @@ enum msg_type {
 
 // Broadcasts a message to the mesh.
 int gen_msg_send(enum msg_type type, const void* val, size_t len);
+
+// Broadcasts the provided microphone data as a MSG_MIC_DATA message.
+// Convenience function :^)
+int mic_msg_send(const struct Samples* samples);
 
 // Initializes the board, gets hardware info, etc. in preparation
 // to sending and receiving data.
