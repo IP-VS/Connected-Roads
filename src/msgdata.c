@@ -20,7 +20,7 @@ static struct bt_mesh_model models[];
 static bool configured = false;
 
 #define MICDATA_STR_LEN 2048
-static char* micdata_str = NULL;
+static char* micdata_str[MICDATA_STR_LEN];
 
 // Node added cb (provisioning complete and configured)
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
@@ -410,12 +410,6 @@ void msgdata_init(void) {
     int err = -1;
 
     printk("Msg data initializing...\n");
-
-    micdata_str = calloc(MICDATA_STR_LEN, 1);
-    if (!micdata_str) {
-        printk("Failed to allocate enough bytes for micdata strings!\n");
-        return;
-    }
 
     if (IS_ENABLED(CONFIG_HWINFO)) {
         err = hwinfo_get_device_id(dev_uuid, sizeof(dev_uuid));
