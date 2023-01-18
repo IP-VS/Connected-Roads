@@ -188,9 +188,13 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind((args.addr, args.port))
 sock.listen()
 
+# socket clients
+clients = []
+
 # TODO error handling
 # TODO handle re-connects
 conn, addr = sock.accept()
+clients.append(conn)
 
 bytes_read = 0
 while True:
@@ -225,7 +229,11 @@ while True:
                 continue
             
             for event in decision(feats):
-                print(event[0])
-                print(event[1])
-                print(event[2])
+                print(event[0]) # index of first sample
+                print(event[1]) # index of last sample
+                print(event[2]) # velocity
                 print()
+                # send velocity to server
+                for client in clients:
+                    client.send(event[2].encode())
+                

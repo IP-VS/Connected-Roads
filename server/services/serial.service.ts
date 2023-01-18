@@ -64,6 +64,22 @@ function initSerial(wsServer: ws.Server) {
     }
     connectSerial();
 
+    // connect to tcp socket for analysis
+    var net = require('net');
+    var detectorClient = new net.Socket();
+    detectorClient.connect(1234, '127.0.0.1', function () {
+        console.log('Connected to detection server');
+    });
+    detectorClient.on('data', function (data: any) {
+        data = data.toString('utf8');
+        console.log('Received: ' + data);
+        // Send data to WS clients
+        wsServer.clients.forEach(client => {
+            client.send('micdata_detector:' + data);
+        });
+    });
+
+    // received data from serial (UART)
     serialport.on('data', function (data) {
         console.log('Data:', data.toString('utf8'));
         var dataStr = data.toString('utf8').trim();
@@ -133,25 +149,20 @@ function initSerial(wsServer: ws.Server) {
         // Microphone data
         else if (dataStr.indexOf('micdata') > -1) {
             dataStr = dataStr.replace(/[^0-9,]/g, '');
-            // connect to tcp socket and send data
-            var net = require('net');
-            var client = new net.Socket();
-            // localhost:1234
-            // 128 byte buffer
+
+            // send data
             var buffer = Buffer.alloc(128);
             // send data to tcp socket
-            client.connect(1234, '127.0.0.1', function () {
-                console.log('Connected');
-                var tmpData0 = parseInt(dataStr.split(',')[0].replace(/[^0-9]/g, ''));
-                buffer.writeInt32BE(tmpData0, 0);
-                var tmpData1 = parseInt(dataStr.split(',')[1].replace(/[^0-9]/g, ''));
-                buffer.writeInt32BE(tmpData1, 0);
-                var tmpData2 = BigInt(dataStr.split(',')[2].replace(/[^0-9]/g, ''));
-                buffer.writeBigInt64BE(tmpData2, 0);
-                client.write(buffer);
-            });
+            var tmpData0 = parseInt(dataStr.split(',')[0].replace(/[^0-9]/g, ''));
+            buffer.writeInt32BE(tmpData0, 0);
+            var tmpData1 = parseInt(dataStr.split(',')[1].replace(/[^0-9]/g, ''));
+            buffer.writeInt32BE(tmpData1, 0);
+            var tmpData2 = BigInt(dataStr.split(',')[2].replace(/[^0-9]/g, ''));
+            buffer.writeBigInt64BE(tmpData2, 0);
+            detectorClient.write(buffer);
+
             wsServer.clients.forEach(client => {
-                client.send('micdata:' + dataStr);
+                client.send('micdata_raw:' + dataStr);
             });
         }
     });
