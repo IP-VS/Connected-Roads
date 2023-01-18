@@ -154,7 +154,9 @@ static int gen_msg_generic(struct bt_mesh_model* model,
                 }
             }
             // Write the data to the uart
-            uart_write_str(dev, micdata_str);
+            uart_write_str(dev, (const char*)micdata_str);
+            // make sure it looks pretty
+            uart_write_str(dev, "\n");
         }
         break;
     case MSG_ADV_COMM:
