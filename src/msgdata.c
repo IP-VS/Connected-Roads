@@ -154,6 +154,11 @@ static int gen_msg_generic(struct bt_mesh_model* model,
     case MSG_UPTIME_ACK:
         printk("bt: got uptime data: '%s'\n", msg_buf);
         break;
+    case MSG_REMOVE: {
+        int node_addr = *(int*)&msg_buf;
+        printk("bt: got remove node message for node %d\n", node_addr);
+        // TODO: Remove the node
+    }
     case MSG_MIC_DATA:
         // don't print, because it's binary! :)
         printk("bt: got MIC message (binary)\n");
