@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include <msgdata.h>
+#include <stdlib.h>
 
 struct k_mutex mtx_read;
 struct k_mutex mtx_write;
@@ -40,6 +41,22 @@ static void uart_fifo_callback(const struct device* dev, void* user_data) {
             printk("UPT command received\n");
             // Send uptime command
             gen_msg_send(MSG_UPTIME, &clean_data[0], (size_t)rx_len + 1);
+        } else if (strncmp(clean_data, "REM", 3) == 0) {
+            // REMabcdef
+            // removes node with hwid 'abcdef'
+            printk("REM command received\n");
+            if (rx_len > 3) {
+                char* end;
+                unsigned long addr = strtoul(&clean_data[3], &end, 16);
+                if (addr == ULONG_MAX) {
+                    printk("REM command address failed to parse as a hexadecimal number: %s\n", strerror(errno));
+                } else {
+                    printk("REM command parsed with address '%lx', sending...\n", addr);
+                    gen_msg_send(MSG_REMOVE, &addr, sizeof(addr));
+                }
+            } else {
+                printk("REM command provided with no address argument, ignoring!\n");
+            }
         } else {
             printk("Unknown command received\n");
         }
