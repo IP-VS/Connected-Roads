@@ -1,6 +1,7 @@
 #include "msgdata.h"
 #include "datastructures.h"
 #include "uart.h"
+#include "printk.h"
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>

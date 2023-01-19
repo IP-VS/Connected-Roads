@@ -16,7 +16,6 @@
 
 #include "board.h"
 #include "datastructures.h"
-#include "printk.h"
 
 /* Receiver */
 extern unsigned int recv_addr;
