@@ -4,6 +4,8 @@ Dieses Projekt soll dazu dienen mittels mehrerer Nordic nRF52840 Dongles und ang
 
 Siehe auch die [Dokumentation](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/wikis/home) für mehr Infos.
 
+![Vernetzte Straßen](screenshot.png)
+
 ## Features
 
 - [x] Verbindungung mehrerer Knoten zu einem Mesh Netzwerk
@@ -35,6 +37,14 @@ Ist die Entwicklungsumgebung erfolgreich aufgesetzt, muss das Projekt gebuilded 
     git checkout server
     west build -b nrf52840dongle_nrf52840 .
 
+**Oder** es kann direkt ein Release von der [Release Seite](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) benutzt werden. Diese .hex Datei dann einfach im nRF Programmer auswählen und flashen.
+
+Danach kann einer der Dongles angeschlossen werden und über das nRF Programmer Tool aus der nRF Connect Toolbox geflashed werden. Alle Knoten benutzen den selben Build.
+
+Anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden. Wenn nun der Button auf den Dongles innerhalb der ersten 5 Sekunden gedrückt wird, konfiguriert das Gerät sich als Provisioner, sodass es das Mesh Netzwerk verwaltet. Ansonsten wird es als Node konfiguriert und dem Mesh Netzwerk beigetreten. Sollte der Button nach den 5 Sekunden gedrückt werden und das Dongle ist noch nicht provisioniert wurden, provisioniert es sich selber mit Test-IDs.
+
+Wenn nach erfolgreicher Provisionierung der Button gedrückt wird, sendet der Knoten eine Test Nachricht an das Mesh Netzwerk.
+
 ### Auswertung
 
 Das Auswertungsskript startet einen TCP-Server und wartet auf Messdaten im folgenden Format (big endian):
@@ -60,14 +70,6 @@ Ausführung z.B. mit:
 ```
 podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
 ```
-
-**Oder** es kann direkt ein Release von der [Release Seite](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) benutzt werden. Diese .hex Datei dann einfach im nRF Programmer auswählen und flashen.
-
-Danach kann einer der Dongles angeschlossen werden und über das nRF Programmer Tool aus der nRF Connect Toolbox geflashed werden. Alle Knoten benutzen den selben Build.
-
-Anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden. Wenn nun der Button auf den Dongles innerhalb der ersten 5 Sekunden gedrückt wird, konfiguriert das Gerät sich als Provisioner, sodass es das Mesh Netzwerk verwaltet. Ansonsten wird es als Node konfiguriert und dem Mesh Netzwerk beigetreten. Sollte der Button nach den 5 Sekunden gedrückt werden und das Dongle ist noch nicht provisioniert wurden, provisioniert es sich selber mit Test-IDs.
-
-Wenn nach erfolgreicher Provisionierung der Button gedrückt wird, sendet der Knoten eine Test Nachricht an das Mesh Netzwerk.
 
 ### Server
 
