@@ -148,8 +148,8 @@ static int gen_msg_generic(struct bt_mesh_model* model,
             iter += 2;
         }
         buf_addr[sizeof(buf_addr) - 1] = 0;
-        int len = sprintf(&clean_data[0], "%d, %s", uptime, buf_addr);
-        gen_msg_send(MSG_UPTIME_ACK, &clean_data[0], (size_t)len + 1);
+        int clean_len = sprintf(&clean_data[0], "%d, %s", uptime, buf_addr);
+        gen_msg_send(MSG_UPTIME_ACK, &clean_data[0], (size_t)clean_len + 1);
         break;
     case MSG_UPTIME_ACK:
         printk("bt: got uptime data: '%s'\n", msg_buf);
