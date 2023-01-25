@@ -184,15 +184,17 @@ function initSerial(wsServer: ws.Server) {
 
         rl.on('line', (line: any) => {
             // send data
-            var buffer = Buffer.alloc(16);
+            var buffer = Buffer.alloc(20);
             line = line.replace('micdata:', '');
             // send data to tcp socket
-            var tmpData0 = parseInt(line.split(',')[0].replace(/[^0-9]/g, ''));
-            buffer.writeInt32BE(tmpData0, 0);
-            var tmpData1 = parseInt(line.split(',')[1].replace(/[^0-9]/g, ''));
-            buffer.writeInt32BE(tmpData1, 4);
-            var tmpData2 = BigInt(line.split(',')[2].replace(/[^0-9]/g, ''));
-            buffer.writeBigInt64BE(tmpData2, 8);
+            var tmpDataID = parseInt(line.split(',')[0].replace(/[^0-9]/g, ''));
+            buffer.writeInt32BE(tmpDataID, 0);
+            var tmpData0 = parseInt(line.split(',')[1].replace(/[^0-9]/g, ''));
+            buffer.writeInt32BE(tmpData0, 4);
+            var tmpData1 = parseInt(line.split(',')[2].replace(/[^0-9]/g, ''));
+            buffer.writeInt32BE(tmpData1, 8);
+            var tmpData2 = BigInt(line.split(',')[3].replace(/[^0-9]/g, ''));
+            buffer.writeBigInt64BE(tmpData2, 12);
             detectorClient.write(buffer);
         });
 
