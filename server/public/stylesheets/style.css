@@ -23,11 +23,21 @@ pre {
   color: grey;
 }
 
-table, th, td {
+
+.table {
+  max-height: 300px;
+  overflow: auto;
+  margin-right: 20px;
+}
+
+table,
+th,
+td {
   border: 1px solid;
 }
 
-td, th {
+td,
+th {
   padding: 10px;
 }
 
@@ -37,5 +47,5 @@ table {
 
 .container {
   display: grid;
-  grid-template-columns: 80% 20%;
+  grid-template-columns: 40% 40% 20%;
 }
