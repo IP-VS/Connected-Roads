@@ -1,8 +1,8 @@
-# Vernetzte Straßen
-
 <div align="center">
     <a href='./README.md'>English</a> | Deutsch
 </div>
+
+# Vernetzte Straßen
 
 Dieses Projekt soll dazu dienen mittels mehrerer Nordic nRF52840 Dongles und angeschlossenen Mikrofonen den Straßenverkehr zu überwachen, um evtl. darauf aufbauend Verkehrsinformationen zu extrahieren.
 

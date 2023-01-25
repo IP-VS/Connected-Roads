@@ -1,8 +1,8 @@
-# Connected roads
-
 <div align="center">
     English | <a href='./README_de.md'>Deutsch</a>
 </div>
+
+# Connected roads
 
 This project is intended to monitor road traffic using several Nordic nRF52840 dongles and connected microphones to extract traffic information based on this.
 
