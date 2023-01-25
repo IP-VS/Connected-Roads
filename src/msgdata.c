@@ -19,8 +19,13 @@ static struct k_sem prov_sem;
 static struct bt_mesh_model models[];
 static bool configured = false;
 
+static uint32_t uptime;
 #define MICDATA_STR_LEN 2048
 static char* micdata_str[MICDATA_STR_LEN];
+#define FIFO_BUF_LEN 128
+static uint8_t clean_data[FIFO_BUF_LEN];
+static int rx_len = 0;
+static uint8_t dev_uuid[16];
 
 // Node added cb (provisioning complete and configured)
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem) {
@@ -130,6 +135,23 @@ static int gen_msg_generic(struct bt_mesh_model* model,
         break;
     case MSG_SND_COMM:
         printk("bt: got SND message: '%s'\n", msg_buf);
+        break;
+    case MSG_UPTIME:
+        printk("bt: got uptime cmd: '%s'\n", msg_buf);
+        // Send uptime to the gateway
+        uptime = k_uptime_get_32();
+        char buf_addr[sizeof(dev_uuid) + 1];
+        char* iter = buf_addr;
+        for (size_t i = 0; i < 16; ++i) {
+            sprintf(iter, "%02x", dev_uuid[i]);
+            iter += 2;
+        }
+        buf_addr[sizeof(buf_addr) - 1] = 0;
+        int len = sprintf(&clean_data[0], "%d, %s", uptime, buf_addr);
+        gen_msg_send(MSG_UPTIME_ACK, &clean_data[0], (size_t)len + 1);
+        break;
+    case MSG_UPTIME_ACK:
+        printk("bt: got uptime data: '%s'\n", msg_buf);
         break;
     case MSG_MIC_DATA:
         // don't print, because it's binary! :)
@@ -269,8 +291,6 @@ static void prov_reset(void) {
     k_sem_give(&prov_sem);
 }
 
-static uint8_t dev_uuid[16];
-
 static const struct bt_mesh_prov prov = {
     .uuid = dev_uuid,
     .output_size = 4,
@@ -283,7 +303,7 @@ static const struct bt_mesh_prov prov = {
 
 // Send a message Generic Client to all nodes.
 int gen_msg_send(enum msg_type type, const void* msg_buf, size_t len) {
-    printk("gen_msg_send to addr: %d\n", recv_addr);
+    // printk("gen_msg_send to addr: %d\n", recv_addr);
     struct bt_mesh_msg_ctx ctx = {
         .app_idx = models[3].keys[0], /* Use the bound key */
         .addr = recv_addr,
@@ -438,6 +458,8 @@ void msgdata_init(void) {
         printk("Bluetooth init failed (err %d)\n", err);
     }
 
+    // Set uptime
+    uptime = k_uptime_get_32();
     // Initialize work queue
     // k_work_init(&send_msg_from_uart_work, send_msg_from_uart);
 
