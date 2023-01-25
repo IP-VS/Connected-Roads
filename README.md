@@ -1,25 +1,29 @@
-# Vernetzte Straßen
+# Connected roads
 
-Dieses Projekt soll dazu dienen mittels mehrerer Nordic nRF52840 Dongles und angeschlossenen Mikrofonen den Straßenverkehr zu überwachen, um evtl. darauf aufbauend Verkehrsinformationen zu extrahieren.
+<p align='center'>
+    English | <a href='./README_de.md'>Deutsch</a>
+</p>
 
-Siehe auch die [Dokumentation](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/wikis/home) für mehr Infos.
+This project is intended to monitor road traffic using several Nordic nRF52840 dongles and connected microphones to extract traffic information based on this.
 
-![Vernetzte Straßen](screenshot.png)
+See also the [documentation](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/wikis/home) for more info.
+
+![Connected Roads](screenshot.png)
 
 ## Features
 
-- [x] Verbindungung mehrerer Knoten zu einem Mesh Netzwerk
-- [x] Senden von Befehlen von einer Weboberfläche an die Nodes
-- [x] Aufzeichnung von Audio-Rohdaten
-- [x] Übertragung von Audio-Rohdaten
-- [x] Knoten als Gateway zum Internet
-- [ ] Extrahieren von Verkehrsinformationen aus Audio-Rohdaten
-- [ ] Übertragung von Verkehrsinformationen an eine Weboberfläche
+- [x] Connection of several nodes to a mesh network
+- [x] Sending commands from a web interface to the nodes
+- [x] Recording of audio raw data
+- [x] Transmission of audio raw data
+- [x] node as a gateway to the Internet
+- [x] Extract traffic information from audio raw data
+- [ ] Transmission of traffic information to a web interface
 
 ## Hardware
 
-- [Nordic nRF52840 Dongle](https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF52840-Dongle)
-- [Mikrofone]()
+- [Nordic nRF52840 Dongle] (https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF52840-Dongle)
+- [microphone]()
 
 ## Software
 
@@ -29,25 +33,25 @@ Siehe auch die [Dokumentation](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-s
 
 ### Zephyr
 
-Für detailierte Installationsanleitungen der Entwicklungsumgebung siehe [Getting Started](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/wikis/Ressources/Development%20Setup).
+For detailed installation instructions of the development environment see [Getting Started](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/wikis/Ressources/Development%20Setup).
 
-Ist die Entwicklungsumgebung erfolgreich aufgesetzt, muss das Projekt gebuilded werden:
+Once the development environment has been set up successfully, the project must be created:
 
-    git clone https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen.git
-    git checkout server
-    west build -b nrf52840dongle_nrf52840 .
+      git clone https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen.git
+      Git checkout server
+      west build -b nrf52840dongle_nrf52840 .
 
-**Oder** es kann direkt ein Release von der [Release Seite](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) benutzt werden. Diese .hex Datei dann einfach im nRF Programmer auswählen und flashen.
+**Or** a release from the [release page](https://gitlab.plagge.it/fh-aachen/ip/vernetzte-strassen/-/releases) can be used directly. Then simply select and flash this .hex file in the nRF programmer.
 
-Danach kann einer der Dongles angeschlossen werden und über das nRF Programmer Tool aus der nRF Connect Toolbox geflashed werden. Alle Knoten benutzen den selben Build.
+Then one of the dongles can be connected and flashed using the nRF Programmer Tool from the nRF Connect Toolbox. All nodes use the same build.
 
-Anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden. Wenn nun der Button auf den Dongles innerhalb der ersten 5 Sekunden gedrückt wird, konfiguriert das Gerät sich als Provisioner, sodass es das Mesh Netzwerk verwaltet. Ansonsten wird es als Node konfiguriert und dem Mesh Netzwerk beigetreten. Sollte der Button nach den 5 Sekunden gedrückt werden und das Dongle ist noch nicht provisioniert wurden, provisioniert es sich selber mit Test-IDs.
+Then connect via UART (under Windows e.g.: puTTY) with the BAUD rate 115200. If the button on the dongles is now pressed within the first 5 seconds, the device configures itself as a provisioner so that it manages the mesh network. Currently it is configured as a node and joined the mesh network. If the button is pressed after 5 seconds and the dongle has not yet been provisioned, it will provision itself with test IDs.
 
-Wenn nach erfolgreicher Provisionierung der Button gedrückt wird, sendet der Knoten eine Test Nachricht an das Mesh Netzwerk.
+If the button is pressed after successful provisioning, the node sends a test message to the mesh network.
 
-### Auswertung
+### Evaluation
 
-Das Auswertungsskript startet einen TCP-Server und wartet auf Messdaten im folgenden Format (big endian):
+The evaluation script starts a TCP server and waits for measurement data in the following format (big-endian):
 
 ```
 int32: left channel
@@ -55,17 +59,17 @@ int32: right channel
 int64: timestamp
 ```
 
-Sobald ein Ereignis erkannt wurde erfolgt eine Ausgabe in stdout.
+As soon as an event was detected, an output was made to stdout.
 
-Der entsprechende Container kann folgendermaßen gebaut werden:
+The corresponding container can be built as follows:
 
 ```
-git checkout auswertung
-cd detector
+git checkout evaluation
+CD detector
 podman build -t detector .
 ```
 
-Ausführung z.B. mit:
+Execution e.g. with:
 
 ```
 podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
@@ -73,42 +77,42 @@ podman run --rm -it -p 12345:5678 -e LISTEN_PORT=1234 detector
 
 ### Server
 
-Die Weboberfläche ist in TypeScript geschrieben und kann wie folgt erstellt werden:
+The web interface is written in TypeScript and can be created as follows:
 
-    cd server
-    npm i
-    npm run dev # oder npm run prod
+      CD server
+      npm i
+      npm run dev # or npm run prod
 
-Diese ist dann unter [http://localhost:3000](http://localhost:3000) erreichbar. Vorher sollte noch die `server/.env` Datei angepasst werden:
+This can then be reached at [http://localhost:3000](http://localhost:3000). The `server/.env` file should be adjusted beforehand:
 
-    NODE_ENV=development
-    WINDOW_SIZE_MS=900000
-    MAX_CONNECTIONS_PER_WINDOW=10000
-    PORT=3000
-    SERIAL_PORT=COM11
-    # RPI: SERIAL_PORT=/dev/ttyACM0
-    BAUD_RATE=115200
-    SERVER_URL=http://localhost
+      NODE_ENV=Development
+      WINDOW_SIZE_MS=900000
+      MAX_CONNECTIONS_PER_WINDOW=10000
+      PORT=3000
+      SERIAL_PORT=COM11
+      # RPI: SERIAL_PORT=/dev/ttyACM0
+      BAUD_RATE=115200
+      SERVER_URL=http://localhost
 
-Hierbei ist besonders SERIAL_PORT relevant, da dieser je nach Port, Gerät unterschiedlich ist. Bei Windows ist dies meistens `COM11`, bei Linux `ttyACM0` o.a.
+SERIAL_PORT is particularly relevant here, since it varies depending on the port and device. With Windows, this is usually `COM11`, with Linux `ttyACM0` or similar.
 
-`WINDOW_SIZE_MS` ist die Größe eines Fensters in MS, in denen `MAX_CONNECTIONS_PER_WINDOW` hergestellt werden können. Wenn diese Anzahl überschritten wird, wird der Nutzer vorübergehend gesperrt.
+`WINDOW_SIZE_MS` is the size of a window in MS in which `MAX_CONNECTIONS_PER_WINDOW` can be established. If this number is exceeded, the user will be temporarily blocked.
 
-Nach Starten und Auswählen des korrekten Ports, werden die verbundenen Nodes in der Übersicht angezeigt, sowie auch deren Status. Mittels der `Send command` Box können Textnachrichten an die Nodes gesendet werden.
+After starting and selecting the correct port, the connected nodes are displayed in the overview, as well as their status. Text messages can be sent to the nodes using the `Send command` box.
 
-### Mikrofone
+### Microphones
 
-Das Auslesen der I2S-Mikrofone funktioniert derzeit nicht.
+Reading the I2S microphones is currently not working.
 
-Der 2-Kanal I2S Schnittstelle sind folgende Ports zugewiesen:
+The following ports are assigned to the 2-channel I2S interface:
 
 - SCK: P0.29
 - LRCK: P1.15
 - SDIN: P0.02
 
-Mittels folgendem Befehl kann der Audio-Input ausgelesen werden:
+The audio input can be read out with the following command:
 
-    git checkout microphone-i2s
-    west build -b nrf52840dongle_nrf52840 .
+      git checkout microphone-i2s
+      west build -b nrf52840dongle_nrf52840 .
 
-Wieder mit nRF Programmer Tool flashen und anschließend per UART (unter Windows z.B: puTTY) mit der BAUD rate 115200 verbinden.
+Flash again with the nRF Programmer Tool and then connect to the BAUD rate 115200 via UART (under Windows e.g.: puTTY).
