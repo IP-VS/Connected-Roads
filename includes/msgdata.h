@@ -16,7 +16,6 @@
 
 #include "board.h"
 #include "datastructures.h"
-#include "printk.h"
 
 /* Receiver */
 extern unsigned int recv_addr;
@@ -32,6 +31,7 @@ enum msg_type {
     MSG_MIC_DATA = 'm',
     MSG_UPTIME = 'u',
     MSG_UPTIME_ACK = 'k',
+    MSG_REMOVE = 'r',
 };
 
 // Broadcasts a message to the mesh.

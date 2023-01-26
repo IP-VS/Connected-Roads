@@ -1,6 +1,9 @@
 #include "msgdata.h"
+#include "bluetooth/mesh/main.h"
 #include "datastructures.h"
+#include "kernel.h"
 #include "uart.h"
+#include "printk.h"
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -21,7 +24,7 @@ static bool configured = false;
 
 static uint32_t uptime;
 #define MICDATA_STR_LEN 2048
-static char* micdata_str[MICDATA_STR_LEN];
+static char micdata_str[MICDATA_STR_LEN];
 #define FIFO_BUF_LEN 128
 static uint8_t clean_data[FIFO_BUF_LEN];
 static int rx_len = 0;
@@ -147,12 +150,23 @@ static int gen_msg_generic(struct bt_mesh_model* model,
             iter += 2;
         }
         buf_addr[sizeof(buf_addr) - 1] = 0;
-        int len = sprintf(&clean_data[0], "%d, %s", uptime, buf_addr);
-        gen_msg_send(MSG_UPTIME_ACK, &clean_data[0], (size_t)len + 1);
+        int clean_len = sprintf(&clean_data[0], "%d, %s", uptime, buf_addr);
+        gen_msg_send(MSG_UPTIME_ACK, &clean_data[0], (size_t)clean_len + 1);
         break;
     case MSG_UPTIME_ACK:
         printk("bt: got uptime data: '%s'\n", msg_buf);
         break;
+    case MSG_REMOVE: {
+        int node_addr = *(int*)&msg_buf;
+        printk("bt: got remove node message for node %d\n", node_addr);
+        // Is this "node to remove" us?
+        if (node_addr == primary_addr) {
+            // reset the mesh / unprovision
+            bt_mesh_reset();
+            // enable re-provisioning
+            bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
+        }
+    }
     case MSG_MIC_DATA:
         // don't print, because it's binary! :)
         printk("bt: got MIC message (binary)\n");
