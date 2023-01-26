@@ -8,7 +8,7 @@ class MeshNode {
         this.id = id;
         this.name = name;
         this.status = status;
-     }
+    }
     toString() {
         return JSON.stringify(this);
     }
@@ -23,6 +23,9 @@ class MeshNode {
 class NodeList {
     static nodes: MeshNode[] = [];
     static addNode(node: MeshNode) {
+        if (this.nodes.find(n => n.id == node.id)) {
+            this.removeNode(node.id);
+        }
         this.nodes.push(node);
     }
     static clear() {
@@ -63,4 +66,4 @@ class NodeList {
     }
 }
 
-export {MeshNode, NodeList};
+export { MeshNode, NodeList };

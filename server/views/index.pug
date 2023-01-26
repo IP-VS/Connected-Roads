@@ -8,12 +8,21 @@ block content
           tr 
             th Node
             th Status
+            th Event
             th Actions
         tbody#nodes 
       a#addnode(href='#') Refresh
       div.log
         p Log:
         pre#output
+    div.table
+      table
+        thead
+          tr 
+            th Event
+            th Time
+            th Node
+        tbody#events 
     div.status
       p Status:
       pre#serverconnection

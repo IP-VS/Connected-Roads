@@ -176,7 +176,7 @@ args = argparser.parse_args()
 # int32 left channel
 # int32 right channel
 # int64 time
-MSG_FORMAT = '>iiq'
+MSG_FORMAT = '>iiiq'
 
 unpacker = struct.Struct(MSG_FORMAT)
 msg_buffer = io.BytesIO()
@@ -191,14 +191,19 @@ sock.listen()
 # socket clients
 clients = []
 
+conn, addr = sock.accept()
+print('Connected by', addr)
+clients.append(conn)
+
+# max of 20 nodes from client
+values =  [None] * 20
+event_group = [None] * 100000
+
+# TODO error handling
+# TODO handle re-connects
 while True:
-    # TODO error handling
-    # TODO handle re-connects
-    conn, addr = sock.accept()
-    clients.append(conn)
 
     bytes_read = 0
-    
     bytes_expected = unpacker.size - bytes_read
 
     if bytes_expected > 0:
@@ -217,18 +222,18 @@ while True:
         bytes_read = 0
 
         
-        left, right, time = unpacked_data
-        
+        nodeid, left, right, time = unpacked_data
+    
         left = left / 1000000
         right = right / 1000000
 
-        values = ed.next(left, right)
+        values[nodeid] = ed.next(left, right)
         i += 1
-        if values:
-            event_group = [event for event in subevents(((i-1-len(values[0]), i-1), values[0], values[1], values[2], values[3]))]
+        if values[nodeid]:
+            event_group[nodeid] = [event for event in subevents(((i-1-len(values[nodeid][0]), i-1), values[nodeid][0], values[nodeid][1], values[nodeid][2], values[nodeid][3]))]
     
             feats = []
-            for event in event_group:
+            for event in event_group[nodeid]:
                 pos, vel = position_velocity(event[2], event[3])
                 feats.append(features((event[0], event[1], pos, vel, event[4])))
                 
@@ -242,5 +247,5 @@ while True:
                 print()
                 # send velocity to server
                 for client in clients:
-                    client.send(bytes(str(event[2]), encoding='utf-8'))
+                    client.send(bytes(f"{nodeid},{event[2]}", encoding='utf-8'))
                 
